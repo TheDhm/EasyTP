@@ -1,5 +1,5 @@
 """
-ASGI config for Docker2CS project.
+ASGI config for container-manager-app project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Docker2CS.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'container-manager-app.settings')
 
 application = get_asgi_application()
