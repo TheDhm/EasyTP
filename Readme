@@ -1,18 +1,13 @@
-Hello DHM,
-
-to use the Django app just add the app main forlder to your django project.
+To use the Django app just add the app main folder to your django project.
 
 - requirements.txt file contains all used python modules in this project
 
 - dont forget to add  'main.apps.MainConfig' to your django settings INSTALLED_APPS list
 
 - dont forget to add to your django setting the following vars:
-DEFAULT_APP_NAME = "DAHMANUS_OS" # default app name used by models
-DEFAULT_APP_LIST = {"DAHMANUS_OS":"consol/ubuntu-xfce-vnc"} #app_name to image
+DEFAULT_APP_NAME = ["LOGISIM", "GNS3"] # default app name used by models
+DEFAULT_APP_LIST = {"LOGISIM": "logisim:version1.3", "GNS3": "thunderbird"} #app_name to image
 DEFAULT_APP_PORT_RANGE = "4" #default port range 4****
-
-GOOD LUCK
-ZS−Sollutionz
 
 
 ############### LIFE BEGIN #############
