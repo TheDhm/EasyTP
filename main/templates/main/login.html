@@ -1,0 +1,24 @@
+{% extends "main/skeleten.html" %}
+{%block content%}
+<div class="ui container">
+    <div class="row">
+        <h3>Se connecter</h3>
+        <p>Afin de vous connecter veuillez insérer votre nom d'utilisateur et mot de passe</p>
+        <br>
+    </div>
+    <div class="ui form">
+        <form method="POST">
+        {% csrf_token %}
+        {% for i in form%}
+            <div class="field">
+             <label for="{{i.id_for_label}}">{{i.label}}</label>
+              {{i}}
+            </div>
+
+            {% endfor%}
+            <button class="ui primary button" type="submit">Se connecter</button>
+        </form>
+    </div>
+</div>
+<br><br>
+{% endblock %}

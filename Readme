@@ -1,0 +1,34 @@
+Hello DHM,
+
+to use the Django app just add the app main forlder to your django project.
+
+- requirements.txt file contains all used python modules in this project
+
+- dont forget to add  'main.apps.MainConfig' to your django settings INSTALLED_APPS list
+
+- dont forget to add to your django setting the following vars:
+DEFAULT_APP_NAME = "DAHMANUS_OS" # default app name used by models
+DEFAULT_APP_LIST = {"DAHMANUS_OS":"consol/ubuntu-xfce-vnc"} #app_name to image
+DEFAULT_APP_PORT_RANGE = "4" #default port range 4****
+
+GOOD LUCK
+ZS−Sollutionz
+
+
+############### LIFE BEGIN #############
+
+| _____ |   | ___ | ___ ___ | |   | |
+| |   | |_| |__ | |_| __|____ | | | |
+| | | |_________|__ |______ |___|_| |
+| |_|   | _______ |______ |   | ____|
+| ___ | |____ | |______ | |_| |____ |
+|___|_|____ | |   ___ | |________ | |
+|   ________| | |__ | |______ | | | |
+| | | ________| | __|____ | | | __| |
+|_| |__ |   | __|__ | ____| | |_| __|
+|   ____| | |____ | |__ |   |__ |__ |
+| |_______|_______|___|___|___|_____|
+############### LIFE END ###############
+ 
+
+

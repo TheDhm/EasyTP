@@ -1,0 +1,68 @@
+{% extends "main/skeleten.html" %}
+{%block content%}
+<br>
+<div class="ui container">
+    {%if not request.user.is_authenticated%}
+    <h2 class="ui center aligned red icon header">
+      <i class="settings icon"></i>
+      <div class="content">
+        YOU ARE NOT CONNECTED
+        <div class="sub header">Please connect first to access your machine.</div>
+      </div>
+    </h2>
+    {% else %}
+    <div class="ui message">
+      <div class="header">
+        Hi, {{user.username}}, Welcome to your account
+      </div>
+      <ul class="list">
+        <li>You can find your vnc username, password here</li>
+      </ul>
+    </div>
+    <h2 class="ui icon header">
+      <i class="address card green large icon"></i>
+      <div class="content">
+        Account Informations
+        <div class="sub header">Manage your account settings and set e-mail preferences.</div>
+      </div>
+    </h2>
+    <table class="ui celled striped table">
+      <thead>
+        <tr><th colspan="3">
+          Login informations
+        </th>
+      </tr></thead>
+        {% for container, values in data.items %}
+      <tbody>
+        <tr>
+          <td class="collapsing">
+              {{ container }} : Machine link
+          </td>
+            <td>
+            <a  href="http://localhost:{{values.port}}"><h5 class="ui left aligned">http://localhost:{{values.port}}/</h5></a>
+            </td>
+          <td class="right aligned collapsing">
+              <a target="_blank" href="http://localhost:{{values.port}}/vnc.html?password={{values.vnc_pass}}&path=vnc&autoconnect=true&resize=scale&reconnect=true&show_dot=true"><h6 class="ui center aligned grey icon header"><i class="desktop large icon"></i><div class="content">Direct connect</div></h6></a>
+
+          </td>
+        </tr>
+        <tr>
+            <td class="collapsing">
+              Password
+            </td>
+            <td><strong>{{values.vnc_pass}}</strong></td>
+            <td class="right aligned collapsing">
+                {% if values.container_status %}
+                <h6 class="ui center aligned green icon header"><i class="power off large icon"></i><div class="content">Machine ON</div></h6>
+                {% else %}
+                                <h6 class="ui center aligned red icon header"><i class="power off large icon"></i><div class="content">Machine OFF</div></h6>
+                {% endif %}
+            </td>
+        </tr>
+      </tbody>
+    {% endfor %}
+    </table>
+    {% endif %}
+</div>
+
+{% endblock %}
