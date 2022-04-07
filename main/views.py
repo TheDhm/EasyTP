@@ -8,7 +8,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.conf import settings
-from .models import Containers,Instances
+from .models import Containers, Instances
 import docker
 import hashlib
 
@@ -20,22 +20,23 @@ def autotask(func):
         t = Thread(target=func, args=args, kwargs=kwargs)
         t.daemon = True
         t.start()
+
     return decor
 
 
 @autotask
-def run_docker(app_name,port,container_name,vnc_password ,*args,**kwargs):
+def run_docker(app_name, port, container_name, vnc_password, *args, **kwargs):
     client = docker.from_env()
     try:
         container = client.containers.run(image=settings.DEFAULT_APP_LIST[app_name],
-                              detach=True,
-                              ports={'8080':int(port)},
-                              name=container_name,
-                              environment=[f"VNC_PW={vnc_password}", "VNC_RESOLUTION=1366x768"])
-        print("### run docker ### "+container_name)
+                                          detach=True,
+                                          ports={'8080': int(port)},
+                                          name=container_name,
+                                          environment=[f"VNC_PW={vnc_password}", "VNC_RESOLUTION=1366x768"])
+        print("### run docker ### " + container_name)
     except Exception as e:
         print("#DEBUG:EXCEPTION IN run_docker")
-        print(e)#Handle exception and log it here
+        print(e)  # Handle exception and log it here
         try:
             container = client.containers.get(container_name)
             container.start()
@@ -58,15 +59,14 @@ def homepage(request):
 
             try:
                 client = docker.from_env()
-                print("### home ### "+container.container_name)
                 docker_container = client.containers.get(container.container_name)
                 status = docker_container.attrs["State"]["Running"]
             except Exception as e:
                 print("#DEBUG:Container status error handling")
                 print(e)
                 pass
-            data[container_app] = dict({"vnc_pass": vnc_pass, "container_status": status, "port": container.container_port})
-    print(data)
+            data[container_app] = dict(
+                {"vnc_pass": vnc_pass, "container_status": status, "port": container.container_port})
     return render(request,
                   "main/main.html",
                   {"data": data})
@@ -88,20 +88,7 @@ def login_request(request):
             if user is not None:
                 login(request, user)
                 messages.info(request, f"Bienvenue, vous etes connecté !")
-                if not user.is_superuser:
-                    containers = Containers.objects.filter(container_user=user)
-                    port_calculator = 0
 
-                    for container in containers:
-
-                        image_name = settings.DEFAULT_APP_LIST[container.app_name]
-                        run_docker(app_name=container.app_name,
-                               port=settings.DEFAULT_APP_PORT_RANGE+str(user.id*2-port_calculator).zfill(4),
-                               container_name=hashlib.md5(f'{image_name}:{user.username}:{user.id}'.encode("utf-8")).hexdigest(),
-                               vnc_password=hashlib.md5(container.container_vnc_password.encode("utf-8")).hexdigest()
-                               )
-                        port_calculator += 1
-                        new_instance = Instances.objects.get_or_create(container=container, instance_name=f'{container.app_name}')
                 return redirect("main:homepage")
             else:
                 messages.error(request, "Nom d'utilisateur ou mot de passe invalide(s) !")
@@ -112,6 +99,32 @@ def login_request(request):
     return render(request,
                   "main/login.html",
                   {"form": form})
+
+
+def start_container(request, app):
+    if request.user.is_authenticated:
+        if not request.user.is_superuser:
+            container = Containers.objects.get(container_user=request.user, app_name=app)
+
+            run_docker(app_name=container.app_name,
+                       port=container.container_port,
+                       container_name=container.container_name,
+                       vnc_password=hashlib.md5(container.container_vnc_password.encode("utf-8")).hexdigest()
+                       )
+            # TODO : vulnerability, args should be generated dynamically to avoid injection ( port & container_name )
+            new_instance = Instances.objects.get_or_create(container=container, instance_name=f'{container.app_name}')
+
+    return redirect("main:homepage")
+
+
+def stop_container(request, app):
+    if request.user.is_authenticated:
+        client = docker.from_env()
+        container_name = request.user.container_user.get(app_name=app).container_name
+        container = client.containers.get(container_name)
+        container.stop()
+
+    return redirect("main:homepage")
 
 
 def watch_dog_notification(request):
@@ -126,5 +139,3 @@ def watch_dog_notification(request):
         if instance.container.container_name not in actif_containers:
             instance.delete()
     return HttpResponse("OK")
-
-
