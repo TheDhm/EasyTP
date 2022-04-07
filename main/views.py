@@ -47,12 +47,11 @@ def run_docker(app_name, port, container_name, vnc_password, *args, **kwargs):
 
 
 def homepage(request):
-    vnc_pass = False
-    status = False
-    data = dict()
     if request.user.is_authenticated:
+        data = dict()
         containers = request.user.container_user.all()
         for container in containers:
+            status = False
             container_app = container.app_name
             vnc_pass = container.container_vnc_password
             vnc_pass = hashlib.md5(vnc_pass.encode("utf-8")).hexdigest()
