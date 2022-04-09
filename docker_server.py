@@ -7,20 +7,20 @@ containers_activity = dict()
 while True:
     for container in client.containers.list():
         command = container.exec_run(cmd="netstat -tan")[1]
-        command = re.search("ESTABLISHED",str(command))
+        command = re.search("ESTABLISHED", str(command))
         if command:
             # print(command, container.name, "IS CONNECTED [*]")
             containers_activity[container.name] = datetime.datetime.now()
 
         else:
             print(container.name, "is inactive [*]")
-            if not containers_activity.get(container.name,False):
+            if not containers_activity.get(container.name, False):
                 containers_activity[container.name] = datetime.datetime.now()
     containers_to_delete = []
     for elem in containers_activity:
         timediff = datetime.datetime.now() - containers_activity[elem]
         if timediff.seconds/60 >= SHUTDOWN_INTERVAL_MINUTES:
-            print("Shutting down:",elem,"active since:",containers_activity[elem])
+            print("Shutting down:", elem, "active since:", containers_activity[elem])
             client.containers.get(elem).stop()
             containers_to_delete.append(elem)
             try:

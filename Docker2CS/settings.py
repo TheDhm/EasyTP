@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 from pathlib import Path
 
 DEFAULT_APP_NAME = ["LOGISIM", "GNS3"] # default app name used by models
-DEFAULT_APP_LIST = {"LOGISIM": "logisim:version1.3",
+DEFAULT_APP_LIST = {"LOGISIM": "logisim:version1.4",
                     "GNS3": "thunderbird"} #app_name to image
 
 DEFAULT_APP_PORT_RANGE = "4" #default port range 4****
