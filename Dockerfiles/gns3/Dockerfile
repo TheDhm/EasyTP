@@ -9,7 +9,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends openbox tigervnc-standalone-server tigervnc-common  supervisor gosu && \
+    apt-get install -y --no-install-recommends openbox tigervnc-standalone-server tigervnc-common net-tools supervisor gosu && \
     rm -rf /var/lib/apt/lists && \
     mkdir -p /usr/share/desktop-directories
 
@@ -17,9 +17,6 @@ RUN apt-get update -y && \
     apt-get install -y --no-install-recommends lxterminal nano wget openssh-client rsync ca-certificates xdg-utils htop tar xzip gzip bzip2 zip unzip && \
     rm -rf /var/lib/apt/lists
 
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends default-jre gcc && \
-    rm -rf /var/lib/apt/lists
 
 COPY --from=easy-novnc-build /bin/easy-novnc /usr/local/bin/
 COPY menu.xml /etc/xdg/openbox/
@@ -49,7 +46,7 @@ RUN apt update && \
 	usermod -aG kvm app && \
 	usermod -aG libvirt app && \
 	wget https://www.w7cloud.com/GNS3-IOS/c7200-jk9s-mz.124-13b.bin
-	
+
 VOLUME /data
 
 RUN mkdir -p /home/.vnc

@@ -5,9 +5,11 @@ RUN go mod init build && \
     go build -o /bin/easy-novnc github.com/geek1011/easy-novnc
 
 FROM debian:buster
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update && DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends openbox tigervnc-standalone-server tigervnc-common supervisor gosu && \
+    apt-get install -y --no-install-recommends openbox tigervnc-standalone-server tigervnc-common net-tools supervisor gosu && \
     rm -rf /var/lib/apt/lists && \
     mkdir -p /usr/share/desktop-directories
 
@@ -16,7 +18,7 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends default-jre gcc net-tools && \
+    apt-get install -y --no-install-recommends default-jre gcc && \
     rm -rf /var/lib/apt/lists
 
 
