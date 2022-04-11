@@ -1,5 +1,5 @@
 import docker, re, time, datetime, requests
-VERIFY_EVERY = 5
+VERIFY_EVERY = 2
 SHUTDOWN_INTERVAL_MINUTES = 20
 client = docker.from_env()
 # print(client.containers.list())
