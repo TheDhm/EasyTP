@@ -25,13 +25,14 @@ def autotask(func):
 
 
 @autotask
-def run_docker(app_name, port, container_name, vnc_password, *args, **kwargs):
+def run_docker(app_name, port, container_name, vnc_password, *args, **kwargs,):
     client = docker.from_env()
     try:
         container = client.containers.run(image=settings.DEFAULT_APP_LIST[app_name],
                                           detach=True,
                                           ports={'8080': int(port)},
                                           name=container_name,
+                                          volumes=['/home/zulu/userdata/user1:/data'],
                                           environment=[f"VNC_PW={vnc_password}", "VNC_RESOLUTION=1366x768"])
         print("### run docker ### " + container_name)
     except Exception as e:
