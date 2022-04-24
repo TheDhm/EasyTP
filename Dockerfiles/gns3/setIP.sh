@@ -1,5 +1,7 @@
 #!/bin/bash
+sleep 1.5
 IP=$(ip route show | awk '/172.17.0.0/ {print $9}')
-awk -v ip="$IP" '{ gsub("localhost", ip); print $0}' /data/.config/GNS3/2.2/gns3_server.conf > out.conf
-cat out.conf > /data/.config/GNS3/2.2/gns3_server.conf
-rm out.conf
+ACT=$(awk '/host/ {print $3}' /data/.config/GNS3/2.2/gns3_server.conf)
+awk -v ip="$IP" -v act="$ACT" '{ gsub(act, ip); print $0}' /data/.config/GNS3/2.2/gns3_server.conf > /tmp/out.conf
+cat /tmp/out.conf > /data/.config/GNS3/2.2/gns3_server.conf
+rm /tmp/out.conf
