@@ -21,13 +21,14 @@ RUN apt-get update -y && \
 COPY --from=easy-novnc-build /bin/easy-novnc /usr/local/bin/
 COPY menu.xml /etc/xdg/openbox/
 COPY supervisord.conf /etc/
+COPY setIP.sh /etc/
 EXPOSE 8080
 
 RUN groupadd --gid 1000 app && \
     useradd --home-dir /data --shell /bin/bash --uid 1000 --gid 1000 app && \
     mkdir -p /data
 RUN apt update && \
-	apt install -y python3-pip python3-pyqt5 python3-pyqt5.qtsvg python3-pyqt5.qtwebsockets qemu qemu-kvm qemu-utils libvirt-clients libvirt-daemon-system virtinst wireshark xtightvncviewer apt-transport-https ca-certificates curl gnupg2 software-properties-common && \
+	apt install -y tint2 feh python3-pip python3-pyqt5 python3-pyqt5.qtsvg python3-pyqt5.qtwebsockets qemu qemu-kvm qemu-utils libvirt-clients libvirt-daemon-system virtinst wireshark xtightvncviewer apt-transport-https ca-certificates curl gnupg2 software-properties-common && \
 	apt install -y telnet xterm && \
 	pip3 install gns3-server && \
 	pip3 install gns3-gui && \
@@ -46,6 +47,13 @@ RUN apt update && \
 	usermod -aG kvm app && \
 	usermod -aG libvirt app && \
 	wget https://www.w7cloud.com/GNS3-IOS/c7200-jk9s-mz.124-13b.bin
+
+RUN mkdir /home/wallpaper && \
+    mkdir /tmp/wallpaper
+
+RUN cd /tmp/wallpaper && \
+    wget https://free4kwallpapers.com/uploads/wallpaper/minimal-landscape-wallpaper-1366x768-wallpaper.jpg && \
+    cp /tmp/wallpaper/* /home/wallpaper/wallpaper.jpg
 
 VOLUME /data
 
