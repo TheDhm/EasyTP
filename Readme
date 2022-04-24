@@ -4,10 +4,13 @@ To use the Django app just add the app main folder to your django project.
 
 - dont forget to add  'main.apps.MainConfig' to your django settings INSTALLED_APPS list
 
-- dont forget to add to your django setting the following vars:
+- dont forget to add (and check) the following vars to your django setting :
+
+PARENT_DIRECTORY = "/home/userdata"  # customize
 DEFAULT_APP_NAME = ["LOGISIM", "GNS3"] # default app name used by models
-DEFAULT_APP_LIST = {"LOGISIM": "logisim:version1.3", "GNS3": "thunderbird"} #app_name to image
+DEFAULT_APP_LIST = {"LOGISIM": "logisim:latest", "GNS3": "gns3:latest"} #app_name to image
 DEFAULT_APP_PORT_RANGE = "4" #default port range 4****
+
 
 
 ############### LIFE BEGIN #############
