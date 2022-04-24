@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from django.conf import settings
 import hashlib
 import uuid
+import os
 
 
 class Containers(models.Model):
@@ -37,6 +38,14 @@ def generateContainer(sender, instance, created, **kwargs):
     if created:
         port_calculator = 0
         n_of_apps = len(settings.DEFAULT_APP_NAME)
+        # create dir for user
+        user_directory = hashlib.md5(f'{instance.id}'.encode("utf-8")).hexdigest()
+        path = os.path.join(settings.PARENT_DIR, user_directory)
+        try:
+            os.mkdir(path)
+        except OSError as error:
+            print(error)
+
         for app in settings.DEFAULT_APP_NAME:
             # app_name = settings.DEFAULT_APP_LIST[app]
             model = Containers(container_user=instance,
