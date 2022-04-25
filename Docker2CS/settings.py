@@ -12,12 +12,12 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 
 from pathlib import Path
 
-DEFAULT_APP_NAME = ["LOGISIM", "GNS3"] # default app name used by models
-DEFAULT_APP_LIST = {"LOGISIM": "logisim:version1.4",
-                    "GNS3": "gns3:latest"} #app_name to image
+DEFAULT_APP_NAME = ["LOGISIM", "GNS3"]  # default app name used by models
+DEFAULT_APP_LIST = {"LOGISIM": "logisim:latest",
+                    "GNS3": "gns3:latest"}  # app_name to image
 PARENT_DIR = "/home/zulu/userdata"
 
-DEFAULT_APP_PORT_RANGE = "4" #default port range 4****
+DEFAULT_APP_PORT_RANGE = "4"    # default port range 4****
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
