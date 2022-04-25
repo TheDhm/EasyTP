@@ -8,7 +8,7 @@
         </item>
         <item label="Terminal">
             <action name="Execute">
-                <execute>/usr/bin/x-terminal-emulator</execute>
+                <execute>/usr/bin/lxterminal</execute>
             </action>
         </item>
     </menu>
