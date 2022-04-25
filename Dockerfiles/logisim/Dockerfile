@@ -18,7 +18,7 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends default-jre gcc && \
+    apt-get install -y --no-install-recommends default-jre gcc tint2 feh && \
     rm -rf /var/lib/apt/lists
 
 
@@ -37,6 +37,13 @@ EXPOSE 8080
 RUN groupadd --gid 1000 app && \
     useradd --home-dir /data --shell /bin/bash --uid 1000 --gid 1000 app && \
     mkdir -p /data \
+
+RUN mkdir /home/wallpaper && \
+    mkdir /tmp/wallpaper
+
+RUN cd /tmp/wallpaper && \
+    wget https://free4kwallpapers.com/uploads/wallpaper/minimal-landscape-wallpaper-1366x768-wallpaper.jpg && \
+    cp /tmp/wallpaper/* /home/wallpaper/wallpaper.jpg
 
 VOLUME /data
 
