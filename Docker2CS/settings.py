@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 
 from pathlib import Path
 
+AUTH_USER_MODEL = 'main.DefaultUser'
 DEFAULT_APP_NAME = ["LOGISIM", "GNS3"]  # default app name used by models
 DEFAULT_APP_LIST = {"LOGISIM": "logisim:latest",
                     "GNS3": "gns3:latest"}  # app_name to image
