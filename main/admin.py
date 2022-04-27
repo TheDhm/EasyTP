@@ -24,7 +24,7 @@ class CustomAdmin(UserAdmin):
     )
     add_fieldsets = (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'email', 'role', 'year'),
+            'fields': ('email', 'password1', 'password2', 'role', 'year'),
         }),
 
     add_form = CustomUserCreationForm
@@ -33,6 +33,7 @@ class CustomAdmin(UserAdmin):
         urls = super().get_urls()
         new_urls = [path('add_from_csv/', views.add_from_csv, name='add_from_csv')]
         return new_urls + urls
+    list_filter = ('is_staff', 'role', 'year')
 
 
 # admin.site.register(Containers)
