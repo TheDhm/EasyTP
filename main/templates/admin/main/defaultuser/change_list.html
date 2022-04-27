@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static %}
+
+{% block object-tools-items %}
+     <li>
+        <a href="{% url "admin:add_from_csv"%}" class="btn btn-high btn-success">Import Users from CSV</a>
+    </li>
+    {{ block.super }}
+
+{% endblock %}
