@@ -1,9 +1,8 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpRequest
+from django.shortcuts import render, redirect, reverse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from threading import Thread
-from time import sleep
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
@@ -12,6 +11,7 @@ from .models import Containers, Instances
 import docker
 import hashlib
 import os
+from .forms import AddUsersCSV
 
 app_name = "main"
 
@@ -48,9 +48,31 @@ def run_docker(app_name, port, container_name, vnc_password, path, *args, **kwar
     return
 
 
+def add_from_csv(request):
+    if request.method == 'POST':
+        csv_file = request.FILES["csv_file"]
+        form_data = AddUsersCSV(request.POST)
+        if not csv_file.name.endswith('.csv'):
+            messages.warning(request, 'The wrong file type was uploaded')
+            return HttpResponseRedirect(request.path_info)
+
+        # TODO
+
+        messages.success(request, 'Users created !')
+        url = reverse('admin:main_defaultuser_changelist')
+
+        return HttpResponseRedirect(url)
+
+    form = AddUsersCSV()
+    data = {'form': form}
+    return render(request, "admin/add_from_csv.html", data)
+
+
 def homepage(request):
     data = dict()
     if request.user.is_authenticated:
+        if request.user.is_superuser:
+            return render(request, 'main/admin.html')
 
         containers = request.user.container_user.all()
         for container in containers:
@@ -105,7 +127,7 @@ def login_request(request):
 
 def start_container(request, app):
     if request.user.is_authenticated:
-        if not request.user.is_superuser:
+        if not request.user.is_superuser and not request.user.is_staff:
             container = Containers.objects.get(container_user=request.user, app_name=app)
 
             run_docker(app_name=container.app_name,
