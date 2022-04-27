@@ -19,7 +19,7 @@ class DefaultUser(AbstractUser):
         (S, 'Student'),
         (A, 'Staff'),
     ]
-    role = models.CharField(max_length=1, choices=ROLES, default=None, blank=True)
+    role = models.CharField(max_length=1, choices=ROLES, default='', blank=True)
 
     CP1 = '1cp'
     CP2 = '2cp'
@@ -33,7 +33,7 @@ class DefaultUser(AbstractUser):
         (CS1, 'Second Cycle 1'),
         (CS2, 'Second Cycle 2'),
     ]
-    year = models.CharField(max_length=3, choices=YEARS, default=None, blank=True)
+    year = models.CharField(max_length=3, choices=YEARS, default='', blank=True)
 
 
 class Containers(models.Model):
