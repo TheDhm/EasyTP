@@ -2,7 +2,6 @@
 {% load static i18n admin_urls %}
 {% block content %}
 <div>
-    {{ form.errors }}
     <form action="." method="POST" enctype="multipart/form-data">
         {%   csrf_token %}
         {{ form.as_p }}
