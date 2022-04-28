@@ -6,20 +6,28 @@ import hashlib
 import uuid
 import os
 from django.contrib.auth.models import AbstractUser
+from django.utils.translation import gettext_lazy as _
+from .custom_validators import EsiEmailValidator, validate_year
 
 
 class DefaultUser(AbstractUser):
-    email = models.EmailField(max_length=50, blank=False)
+    email = models.EmailField(_('email address'),
+                              max_length=50,
+                              blank=False,
+                              unique=True,
+                              help_text=_('Enter the email of the user, must ends with @esi.dz'),
+                              validators=[EsiEmailValidator(allowlist=['esi.dz'],
+                                                            message='Enter a valid "@esi.dz" email address.')])
+
     T = 'T'
     S = 'S'
-    A = 'A'
+    Admin = 'A'
     ROLES = [
-        ('', None),
         (T, 'Teacher'),
         (S, 'Student'),
-        (A, 'Staff'),
+        (Admin, 'Staff'),
     ]
-    role = models.CharField(max_length=1, choices=ROLES, default='', blank=True)
+    role = models.CharField(max_length=1, choices=ROLES, default=T, blank=False)
 
     CP1 = '1cp'
     CP2 = '2cp'
@@ -27,13 +35,21 @@ class DefaultUser(AbstractUser):
     CS2 = '2CS'
 
     YEARS = [
-        ('', None),
         (CP1, 'Cycle Préparatoire 1'),
         (CP2, 'Cycle Préparatoire 2'),
         (CS1, 'Second Cycle 1'),
         (CS2, 'Second Cycle 2'),
     ]
-    year = models.CharField(max_length=3, choices=YEARS, default='', blank=True)
+    year = models.CharField(max_length=3, choices=YEARS, default=CP1, blank=True)
+
+    def save(self, *args, **kwargs):
+        self.username = self.email.split('@esi.dz')[0]
+
+        if self.role == self.Admin:
+            self.is_staff = True
+        if self.role != self.S:
+            self.year = ''
+        super().save(*args, **kwargs)
 
 
 class Containers(models.Model):
