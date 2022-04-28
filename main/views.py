@@ -51,21 +51,21 @@ def run_docker(app_name, port, container_name, vnc_password, path, *args, **kwar
 def add_from_csv(request):
     if request.method == 'POST':
         csv_file = request.FILES["csv_file"]
-        form_data = AddUsersCSV(request.POST)
+        form = AddUsersCSV(request.POST, request.FILES)
         if not csv_file.name.endswith('.csv'):
             messages.warning(request, 'The wrong file type was uploaded')
-            return HttpResponseRedirect(request.path_info)
+            return HttpResponseRedirect(request.path_info, {'form': form})
 
-        # TODO
+        if form.is_valid():
+            # TODO
+            messages.success(request, 'Users created !')
+            url = reverse('admin:main_defaultuser_changelist')
 
-        messages.success(request, 'Users created !')
-        url = reverse('admin:main_defaultuser_changelist')
-
-        return HttpResponseRedirect(url)
-
-    form = AddUsersCSV()
+            return HttpResponseRedirect(url)
+    else:
+        form = AddUsersCSV()
     data = {'form': form}
-    return render(request, "admin/add_from_csv.html", data)
+    return render(request, "admin/add_from_csv.html", context=data)
 
 
 def homepage(request):
