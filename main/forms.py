@@ -1,32 +1,39 @@
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django.contrib.auth.forms import UserCreationForm
 from django import forms
-from .custom_validators import validate_year
-from .models import DefaultUser
-
-all_Years = [('', None)] + DefaultUser.YEARS
+from .models import DefaultUser, AccessGroup, App
+from django.core.validators import FileExtensionValidator
 
 
 class AddUsersCSV(forms.Form):
-    csv_file = forms.FileField(label='csv file', max_length=200, allow_empty_file=False, required=True)
+    csv_file = forms.FileField(label='csv file',
+                               max_length=200,
+                               allow_empty_file=False,
+                               required=True,
+                               validators=[FileExtensionValidator(['csv', ''])])
     role = forms.ChoiceField(label='choose role for users', choices=DefaultUser.ROLES, required=True)
-    year = forms.ChoiceField(label='choose year for users', choices=all_Years, required=False)
-
-    def clean_year(self):
-        role = self.cleaned_data.get('role')
-        year = self.cleaned_data.get('year')
-        validate_year(role, year)
+    group = forms.ChoiceField(label='choose group for users', choices=AccessGroup.GROUPS, required=False)
 
 
 class CustomUserCreationForm(UserCreationForm):
-    role = forms.ChoiceField(label='Role', choices=DefaultUser.ROLES, required=False)
-    year = forms.ChoiceField(label='Year', choices=all_Years, required=False)
+    role = forms.ChoiceField(label='Role', choices=DefaultUser.ROLES, required=True)
+    group = forms.ModelChoiceField(AccessGroup.objects.all(), label='group', required=True)
 
     class Meta:
         model = DefaultUser
         fields = ("username", "email")
 
-    def clean_year(self):
-        role = self.cleaned_data.get('role')
-        year = self.cleaned_data.get('year')
-        validate_year(role, year)
 
+class CustomAppForm(forms.ModelForm):
+    class Meta:
+        model = App
+        fields = "__all__"
+
+    # add every new app to FULL ACCESS GROUP
+    def clean_group(self):
+        data = self.cleaned_data['group']
+        print(data)
+        AccessGroup.objects.get_or_create(group='FUL')
+        fag = AccessGroup.objects.filter(group='FUL')
+        data |= fag
+
+        return data
