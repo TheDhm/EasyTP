@@ -7,7 +7,51 @@ import uuid
 import os
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
-from .custom_validators import EsiEmailValidator, validate_year
+from .custom_validators import EsiEmailValidator
+
+
+class AccessGroup(models.Model):
+    CP1 = '1CP'
+    CP2 = '2CP'
+    CS1 = '1CS'
+    CS2 = '2CS'
+    FULL = 'FUL'
+
+    GROUPS = [
+        (FULL, 'Full Access Group'),
+        (CP1, 'Cycle Préparatoire 1'),
+        (CP2, 'Cycle Préparatoire 2'),
+        (CS1, 'Second Cycle 1'),
+        (CS2, 'Second Cycle 2'),
+    ]
+
+    group = models.CharField(max_length=3, choices=GROUPS, default=CP1, unique=True)
+
+    def __str__(self):
+        return f'{self.get_group_display()}'
+
+    def has_access_to(self):
+        return ", ".join([a.name for a in self.apps.all()])
+
+
+class App(models.Model):
+    name = models.CharField(max_length=50, blank=False, unique=True)
+    group = models.ManyToManyField(AccessGroup, related_name='apps', blank=True)
+    images = models.CharField(max_length=10)
+
+    def __str__(self):
+        return f'{self.name}'
+
+    # def save(self, force_insert=False, force_update=False, using=None,
+    #          update_fields=None):
+    #     fag = AccessGroup.objects.get_or_create(group='FUL')[0]
+    #     super(App, self).save(force_insert=force_insert,
+    #                           force_update=force_update, using=using, update_fields=update_fields)
+    #     instance = App.objects.get(name=self.name)
+    #     instance.group.add(fag)
+
+    def groups(self):
+        return ", ".join([g.get_group_display() for g in self.group.all()])
 
 
 class DefaultUser(AbstractUser):
@@ -21,35 +65,27 @@ class DefaultUser(AbstractUser):
 
     T = 'T'
     S = 'S'
-    Admin = 'A'
+    ADMIN = 'A'
     ROLES = [
         (T, 'Teacher'),
         (S, 'Student'),
-        (Admin, 'Staff'),
+        (ADMIN, 'Staff'),
     ]
     role = models.CharField(max_length=1, choices=ROLES, default=T, blank=False)
-
-    CP1 = '1cp'
-    CP2 = '2cp'
-    CS1 = '1CS'
-    CS2 = '2CS'
-
-    YEARS = [
-        (CP1, 'Cycle Préparatoire 1'),
-        (CP2, 'Cycle Préparatoire 2'),
-        (CS1, 'Second Cycle 1'),
-        (CS2, 'Second Cycle 2'),
-    ]
-    year = models.CharField(max_length=3, choices=YEARS, default=CP1, blank=True)
 
     def save(self, *args, **kwargs):
         self.username = self.email.split('@esi.dz')[0]
 
-        if self.role == self.Admin:
+        if self.role == self.ADMIN:
             self.is_staff = True
         if self.role != self.S:
             self.year = ''
         super().save(*args, **kwargs)
+
+    group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None, null=True)
+
+    def apps_available(self):
+        return self.group.has_access_to()
 
 
 class Containers(models.Model):
@@ -104,3 +140,4 @@ def generate_container(sender, instance, created, **kwargs):
                                )
             model.save()
             port_calculator += 1
+
