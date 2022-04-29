@@ -12,10 +12,3 @@ class EsiEmailValidator(EmailValidator):
     def __eq__(self, other):
         return isinstance(other, EsiEmailValidator) and super().__eq__(other)
 
-
-def validate_year(role, year):
-    print(role, year)
-    if role == 'S' and year == '':
-        raise ValidationError(
-            "The student's academic year must be specified."
-        )
