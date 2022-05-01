@@ -9,7 +9,7 @@ class UsersFromCSVForm(forms.ModelForm):
         model = UsersFromCSV
         fields = "__all__"
         help_texts = {
-            'file': 'Upload a file .csv or .xls, containing a list of new users',
+            'file': 'Upload a CSV (or excel) file containing emails of new users',
             'role': 'Specify the role of new users',
             'group': 'Specify the access group of new users'
         }
