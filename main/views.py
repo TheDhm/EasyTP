@@ -11,7 +11,6 @@ from .models import Containers, Instances
 import docker
 import hashlib
 import os
-from .forms import AddUsersCSV
 
 app_name = "main"
 
@@ -46,26 +45,6 @@ def run_docker(app_name, port, container_name, vnc_password, path, *args, **kwar
             print("#DEBUG:EXCEPTION IN run_docker : container.get()")
             print(e)  # Handle exception and log it here
     return
-
-
-def add_from_csv(request):
-    if request.method == 'POST':
-        csv_file = request.FILES["csv_file"]
-        form = AddUsersCSV(request.POST, request.FILES)
-        if not csv_file.name.endswith('.csv'):
-            messages.warning(request, 'The wrong file type was uploaded')
-            return HttpResponseRedirect(request.path_info, {'form': form})
-
-        if form.is_valid():
-            # TODO
-            messages.success(request, 'Users created !')
-            url = reverse('admin:main_defaultuser_changelist')
-
-            return HttpResponseRedirect(url)
-    else:
-        form = AddUsersCSV()
-    data = {'form': form}
-    return render(request, "admin/add_from_csv.html", context=data)
 
 
 def homepage(request):
