@@ -117,9 +117,9 @@ class Instances(models.Model):
 
 class UsersFromCSV(models.Model):
     file = models.FileField(default='',
-                            validators=[FileExtensionValidator(['csv', 'xlsx'])])
-                                        # validate_emails_in_file],
-                            # )  # TODO : fix emails validator
+                            validators=[FileExtensionValidator(['csv', 'xlsx']),
+                                        validate_emails_in_file]
+                            )
 
     role = models.CharField(max_length=1, choices=DefaultUser.ROLES, default=DefaultUser.STUDENT, blank=False)
     group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None)
