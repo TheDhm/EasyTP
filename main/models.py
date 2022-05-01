@@ -1,3 +1,5 @@
+from threading import Thread
+
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.dispatch import receiver
@@ -10,7 +12,24 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from .custom_validators import EsiEmailValidator, validate_emails_in_file
 from pandas import read_csv, read_excel
-from django.contrib.auth.hashers import make_password
+from django.template.loader import render_to_string
+from django.core.mail import send_mail
+
+
+def autotask(func):
+    def decor(*args, **kwargs):
+        t = Thread(target=func, args=args, kwargs=kwargs)
+        t.daemon = True
+        t.start()
+
+    return decor
+
+@autotask
+def send_password(email_to, username, password):
+    subject = 'EasyTP by KuberLeads'
+    message = render_to_string("main/send_password.html", {'username': username, 'password': password})
+    send_mail(subject=subject, message=message, from_email=settings.EMAIL_HOST_USER, recipient_list=[email_to],
+              fail_silently=False)
 
 
 class AccessGroup(models.Model):
@@ -135,22 +154,27 @@ class UsersFromCSV(models.Model):
             if user_exist:
                 try:
                     user_exist.update(email=email,
-                                      password=make_password(email.split("@")[0]),
                                       role=self.role,
                                       group=self.group,
-                                      username=email.split("@")[0]
                                       )
                 except Exception as e:
                     print("user ", email, " not updated")
                     print(e)
             else:
                 try:
+                    username = email.split("@")[0]
+                    password = uuid.uuid4().hex[:8]
+
                     user = DefaultUser.objects.create_user(email=email,
-                                                           password=make_password(email.split("@")[0]),
+                                                           password=password,
                                                            role=self.role,
                                                            group=self.group,
                                                            username=email.split("@")[0]
                                                            )
+                    try:
+                        send_password(email, username, password)
+                    except Exception as e:
+                        print(e)
 
                 except Exception as e:
                     print("user ", email, "not created")
