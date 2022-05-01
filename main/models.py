@@ -1,3 +1,4 @@
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import post_save
@@ -7,7 +8,9 @@ import uuid
 import os
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
-from .custom_validators import EsiEmailValidator
+from .custom_validators import EsiEmailValidator, validate_emails_in_file
+from pandas import read_csv, read_excel
+from django.contrib.auth.hashers import make_password
 
 
 class AccessGroup(models.Model):
@@ -25,7 +28,7 @@ class AccessGroup(models.Model):
         (CS2, 'Second Cycle 2'),
     ]
 
-    group = models.CharField(max_length=3, choices=GROUPS, default=CP1, unique=True)
+    group = models.CharField(max_length=3, choices=GROUPS, default=CP1, unique=True, blank=False)
 
     def __str__(self):
         return f'{self.get_group_display()}'
@@ -42,14 +45,6 @@ class App(models.Model):
     def __str__(self):
         return f'{self.name}'
 
-    # def save(self, force_insert=False, force_update=False, using=None,
-    #          update_fields=None):
-    #     fag = AccessGroup.objects.get_or_create(group='FUL')[0]
-    #     super(App, self).save(force_insert=force_insert,
-    #                           force_update=force_update, using=using, update_fields=update_fields)
-    #     instance = App.objects.get(name=self.name)
-    #     instance.group.add(fag)
-
     def groups(self):
         return ", ".join([g.get_group_display() for g in self.group.all()])
 
@@ -61,30 +56,36 @@ class DefaultUser(AbstractUser):
                               unique=True,
                               help_text=_('Enter the email of the user, must ends with @esi.dz'),
                               validators=[EsiEmailValidator(allowlist=['esi.dz'],
-                                                            message='Enter a valid "@esi.dz" email address.')])
+                                                            message='Enter a valid "@esi.dz" email address.')],
+                              )
 
-    T = 'T'
-    S = 'S'
+    TEACHER = 'T'
+    STUDENT = 'S'
     ADMIN = 'A'
     ROLES = [
-        (T, 'Teacher'),
-        (S, 'Student'),
+        (TEACHER, 'Teacher'),
+        (STUDENT, 'Student'),
         (ADMIN, 'Staff'),
     ]
-    role = models.CharField(max_length=1, choices=ROLES, default=T, blank=False)
+    role = models.CharField(max_length=1, choices=ROLES, default=ADMIN, blank=False)
 
     def save(self, *args, **kwargs):
         self.username = self.email.split('@esi.dz')[0]
 
-        if self.role == self.ADMIN:
+        if self.role == self.ADMIN or self.is_superuser:
             self.is_staff = True
-        if self.role != self.S:
-            self.year = ''
+
+        # add superusers,staff and teachers to FULL ACCESS GROUP
+        if self.role != self.STUDENT:
+            self.group = AccessGroup.objects.get_or_create(group=AccessGroup.FULL)[0]
+
         super().save(*args, **kwargs)
 
     group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None, null=True)
 
     def apps_available(self):
+        if not self.group:
+            return f'Not in a group yet'
         return self.group.has_access_to()
 
 
@@ -114,6 +115,51 @@ class Instances(models.Model):
         return f'{self.container}:{self.instance_name}'
 
 
+class UsersFromCSV(models.Model):
+    file = models.FileField(default='',
+                            validators=[FileExtensionValidator(['csv', 'xlsx'])])
+                                        # validate_emails_in_file],
+                            # )  # TODO : fix emails validator
+
+    role = models.CharField(max_length=1, choices=DefaultUser.ROLES, default=DefaultUser.STUDENT, blank=False)
+    group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None)
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if str(self.file).endswith('.csv'):
+            users = read_csv(self.file)
+        else:
+            users = read_excel(self.file)
+
+        for email in users.iloc[:, 0]:
+            user_exist = DefaultUser.objects.filter(email=email)
+            if user_exist:
+                try:
+                    user_exist.update(email=email,
+                                      password=make_password(email.split("@")[0]),
+                                      role=self.role,
+                                      group=self.group,
+                                      username=email.split("@")[0]
+                                      )
+                except Exception as e:
+                    print("user ", email, " not updated")
+                    print(e)
+            else:
+                try:
+                    user = DefaultUser.objects.create_user(email=email,
+                                                           password=make_password(email.split("@")[0]),
+                                                           role=self.role,
+                                                           group=self.group,
+                                                           username=email.split("@")[0]
+                                                           )
+
+                except Exception as e:
+                    print("user ", email, "not created")
+                    print(e)
+
+    def __str__(self):
+        return self.role + 's'
+
+
 @receiver(post_save, sender=DefaultUser)
 def generate_container(sender, instance, created, **kwargs):
     if created:
@@ -140,4 +186,3 @@ def generate_container(sender, instance, created, **kwargs):
                                )
             model.save()
             port_calculator += 1
-

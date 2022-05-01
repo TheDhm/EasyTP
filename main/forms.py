@@ -1,17 +1,18 @@
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
-from .models import DefaultUser, AccessGroup, App
+from .models import DefaultUser, AccessGroup, App, UsersFromCSV
 from django.core.validators import FileExtensionValidator
 
 
-class AddUsersCSV(forms.Form):
-    csv_file = forms.FileField(label='csv file',
-                               max_length=200,
-                               allow_empty_file=False,
-                               required=True,
-                               validators=[FileExtensionValidator(['csv', ''])])
-    role = forms.ChoiceField(label='choose role for users', choices=DefaultUser.ROLES, required=True)
-    group = forms.ChoiceField(label='choose group for users', choices=AccessGroup.GROUPS, required=False)
+class UsersFromCSVForm(forms.ModelForm):
+    class Meta:
+        model = UsersFromCSV
+        fields = "__all__"
+        help_texts = {
+            'file': 'Upload a file .csv or .xls, containing a list of new users',
+            'role': 'Specify the role of new users',
+            'group': 'Specify the access group of new users'
+        }
 
 
 class CustomUserCreationForm(UserCreationForm):
@@ -31,9 +32,8 @@ class CustomAppForm(forms.ModelForm):
     # add every new app to FULL ACCESS GROUP
     def clean_group(self):
         data = self.cleaned_data['group']
-        print(data)
-        AccessGroup.objects.get_or_create(group='FUL')
-        fag = AccessGroup.objects.filter(group='FUL')
+        AccessGroup.objects.get_or_create(group=AccessGroup.FULL)
+        fag = AccessGroup.objects.filter(group=AccessGroup.FULL)
         data |= fag
 
         return data
