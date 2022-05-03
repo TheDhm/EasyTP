@@ -1,7 +1,8 @@
+import csv
+import openpyxl
+from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 from django.utils.deconstruct import deconstructible
-from django.core.exceptions import ValidationError
-from pandas import read_csv, read_excel
 from django.utils.translation import gettext_lazy as _
 
 
@@ -20,18 +21,29 @@ def validate_emails_in_file(file):
                                         message='Enter a valid "@esi.dz" email address.')
 
     invalid_emails = []
+    emails = []
     if str(file).endswith('.csv'):
-        users = read_csv(file)
+        data = csv.reader(file)
+        header = next(data)
+
+        for row in data:
+            emails.append(row[0])
     else:
-        users = read_excel(file)
+        sheet = openpyxl.load_workbook(file)
+        sheet = sheet.active
+
+        for row in range(1, sheet.max_row):
+            for col in sheet.iter_cols(0):
+                emails.append(col[row].value)
+
+    for email in emails:
+        if email:  # empty cases return None
+            try:
+                email_validator(email)
+            except ValidationError:
+                invalid_emails.append(email)
 
     file.seek(0)
-
-    for email in users.iloc[:, 0]:
-        try:
-            email_validator(email)
-        except ValidationError:
-            invalid_emails.append(email)
 
     if invalid_emails:
         raise ValidationError([
