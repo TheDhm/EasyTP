@@ -1,5 +1,3 @@
-from threading import Thread
-
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.dispatch import receiver
@@ -11,18 +9,12 @@ import os
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from .custom_validators import EsiEmailValidator, validate_emails_in_file
-from pandas import read_csv, read_excel
+import csv
+import openpyxl
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
+from .custom_functions import autotask
 
-
-def autotask(func):
-    def decor(*args, **kwargs):
-        t = Thread(target=func, args=args, kwargs=kwargs)
-        t.daemon = True
-        t.start()
-
-    return decor
 
 @autotask
 def send_password(email_to, username, password):
@@ -88,6 +80,8 @@ class DefaultUser(AbstractUser):
     ]
     role = models.CharField(max_length=1, choices=ROLES, default=ADMIN, blank=False)
 
+    group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None, null=True)
+
     def save(self, *args, **kwargs):
         self.username = self.email.split('@esi.dz')[0]
 
@@ -99,8 +93,6 @@ class DefaultUser(AbstractUser):
             self.group = AccessGroup.objects.get_or_create(group=AccessGroup.FULL)[0]
 
         super().save(*args, **kwargs)
-
-    group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None, null=True)
 
     def apps_available(self):
         if not self.group:
@@ -144,41 +136,52 @@ class UsersFromCSV(models.Model):
     group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None)
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        emails = []
         if str(self.file).endswith('.csv'):
-            users = read_csv(self.file)
+            data = csv.reader(self.file)
+            header = next(data)
+
+            for row in data:
+                emails.append(row[0])
         else:
-            users = read_excel(self.file)
+            sheet = openpyxl.load_workbook(self.file)
+            sheet = sheet.active
 
-        for email in users.iloc[:, 0]:
-            user_exist = DefaultUser.objects.filter(email=email)
-            if user_exist:
-                try:
-                    user_exist.update(email=email,
-                                      role=self.role,
-                                      group=self.group,
-                                      )
-                except Exception as e:
-                    print("user ", email, " not updated")
-                    print(e)
-            else:
-                try:
-                    username = email.split("@")[0]
-                    password = uuid.uuid4().hex[:8]
+            for row in range(1, sheet.max_row):
+                for col in sheet.iter_cols(0):
+                    emails.append(col[row].value)
 
-                    user = DefaultUser.objects.create_user(email=email,
-                                                           password=password,
-                                                           role=self.role,
-                                                           group=self.group,
-                                                           username=email.split("@")[0]
-                                                           )
+        for email in emails:
+            if email:
+                user_exist = DefaultUser.objects.filter(email=email)
+                if user_exist:
                     try:
-                        send_password(email, username, password)
+                        user_exist.update(email=email,
+                                          role=self.role,
+                                          group=self.group,
+                                          )
                     except Exception as e:
+                        print("user ", email, " not updated")
                         print(e)
+                else:
+                    try:
+                        username = email.split("@")[0]
+                        password = uuid.uuid4().hex[:8]
 
-                except Exception as e:
-                    print("user ", email, "not created")
-                    print(e)
+                        user = DefaultUser.objects.create_user(email=email,
+                                                               password=password,
+                                                               role=self.role,
+                                                               group=self.group,
+                                                               username=email.split("@")[0]
+                                                               )
+                        try:
+                            send_password(email, username, password)
+                        except Exception as e:
+                            print(e)
+
+                    except Exception as e:
+                        print("user ", email, "not created")
+                        print(e)
 
     def __str__(self):
         return self.role + 's'
