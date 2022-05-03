@@ -1,8 +1,5 @@
 from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse, HttpResponseRedirect
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from threading import Thread
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
@@ -11,17 +8,9 @@ from .models import Containers, Instances
 import docker
 import hashlib
 import os
+from .custom_functions import autotask
 
 app_name = "main"
-
-
-def autotask(func):
-    def decor(*args, **kwargs):
-        t = Thread(target=func, args=args, kwargs=kwargs)
-        t.daemon = True
-        t.start()
-
-    return decor
 
 
 @autotask
