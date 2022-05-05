@@ -1,39 +1,140 @@
+import uuid
 from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.conf import settings
-from .models import Containers, Instances
-import docker
+from .models import Pod, App
 import hashlib
-import os
 from .custom_functions import autotask
+from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 
 app_name = "main"
 
 
 @autotask
-def run_docker(app_name, port, container_name, vnc_password, path, *args, **kwargs,):
-    client = docker.from_env()
+def generate_pod_if_not_exist(pod_user, app_name, pod_name, pod_vnc_user, pod_vnc_password):
+    pod = Pod(pod_user=pod_user,
+              pod_name=pod_name,
+              app_name=app_name,
+              pod_vnc_user=pod_vnc_user,
+              pod_vnc_password=pod_vnc_password,
+              pod_namespace=app_name.lower())
+    pod.save()
+
+
+@autotask
+def create_service(pod_name, app_name):
+    config.load_kube_config()
+
+    api_instance = client.CoreV1Api()
+
+    manifest = {
+        "kind": "Service",
+        "apiVersion": "v1",
+        "metadata": {
+            "name": app_name + "-service-" + pod_name,
+            "labels": {"serviceApp": pod_name}
+        },
+        "spec": {
+            "selector": {
+                "appDep": pod_name
+            },
+            "ports": [
+                {
+                    "protocol": "TCP",
+                    "port": 8080,
+                    "targetPort": 8080,
+                }
+            ],
+            "type": "NodePort"
+        }
+    }
+
     try:
-        container = client.containers.run(image=settings.DEFAULT_APP_LIST[app_name],
-                                          detach=True,
-                                          ports={'8080': int(port)},
-                                          name=container_name,
-                                          volumes=[f'{path}:/data'],
-                                          environment=[f"VNC_PW={vnc_password}", "VNC_RESOLUTION=1366x768"])
-        print("### run docker ### " + container_name)
-    except Exception as e:
-        print("#DEBUG:EXCEPTION IN run_docker")
-        print(e)  # Handle exception and log it here
-        try:
-            container = client.containers.get(container_name)
-            container.start()
-        except Exception as e:
-            print("#DEBUG:EXCEPTION IN run_docker : container.get()")
-            print(e)  # Handle exception and log it here
-    return
+        api_response = api_instance.create_namespaced_service(namespace='default', body=manifest, pretty='true')
+    except ApiException as e:
+        print("Exception when calling CoreV1Api->create_namespaced_endpoints: %s\n" % e)
+
+
+@autotask
+def deploy_app(pod_name, app_name, image, vnc_password, *args, **kwargs):
+    config.load_kube_config()
+
+    apps_api = client.AppsV1Api()
+    deployment = {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+            "name": app_name + "-deployment-" + pod_name,
+            "labels": {
+                "deploymentApp": pod_name
+            }
+
+        },
+        "spec": {
+            "selector": {
+                "matchLabels": {
+                    "app": app_name
+                },
+            },
+            "replicas": 1,
+            "template": {
+                "metadata": {
+                    "labels": {
+                        "app": app_name,
+                        "appDep": pod_name
+                    }
+                },
+                "spec": {
+                    "containers": [
+                        {
+                            "name": app_name,
+                            "image": image,
+                            "imagePullPolicy": "Never",
+                            "ports": [
+                                {
+                                    "containerPort": 8080
+                                }
+                            ],
+                            "env": [
+                                {
+                                    "name": "VNC_PW",
+                                    "value": vnc_password
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+    try:
+        apps_api.create_namespaced_deployment(namespace="default", body=deployment)
+    except ApiException as e:
+        print("error while deploying: ", e)
+
+
+def start_pod(request, app_name):
+    if request.user.is_authenticated:
+        pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
+        app = App.objects.get(name=app_name)
+        print(hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest())
+
+        deploy_app(pod_name=pod.pod_name,
+                   app_name=app_name.lower(),
+                   image=app.images,
+                   vnc_password=hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest())
+
+        create_service(pod_name=pod.pod_name, app_name=app_name.lower())
+    return redirect("main:homepage")
+
+
+def stop_pod(request, app_name):
+    # TODO
+    return redirect("main:homepage")
 
 
 def homepage(request):
@@ -41,24 +142,59 @@ def homepage(request):
     if request.user.is_authenticated:
         if request.user.is_superuser:
             return render(request, 'main/admin.html')
+        user = request.user
+        apps = user.group.apps.all()
 
-        containers = request.user.container_user.all()
-        for container in containers:
+        for app in apps:
             status = False
-            container_app = container.app_name
-            vnc_pass = container.container_vnc_password
+            port = None
+            ip = None
+            pod = Pod.objects.get(pod_user=request.user, app_name=app.name)
+            if pod:
+                vnc_pass = pod.pod_vnc_password
+                pod_name = pod.pod_name
+
+            else:  # create pod if not exist --> case where admin add new apps after user created
+                pod_name = hashlib.md5(
+                    f'{app_name}:{user.username}:{user.id}'.encode("utf-8")).hexdigest()
+                pod_vnc_user = uuid.uuid4().hex[:6]
+                pod_vnc_password = uuid.uuid4().hex
+                generate_pod_if_not_exist(pod_user=user, pod_name=pod_name, )
+                vnc_pass = pod_vnc_password
+
             vnc_pass = hashlib.md5(vnc_pass.encode("utf-8")).hexdigest()
 
             try:
-                client = docker.from_env()
-                docker_container = client.containers.get(container.container_name)
-                status = docker_container.attrs["State"]["Running"]
+                config.load_config()
+
+                api_instance = client.CoreV1Api()
+                apps_instance = client.AppsV1Api()
+
+                service = api_instance.list_namespaced_service(namespace="default",
+                                                               label_selector="serviceApp={}".format(pod_name))
+                deployment = apps_instance.list_namespaced_deployment(namespace="default",
+                                                                      label_selector="deploymentApp={}".format(
+                                                                          pod_name))
+
+                if len(service.items) != 0:
+                    if len(deployment.items) != 0:
+                        if deployment.items[0].status.ready_replicas:
+                            status = True
+                            # port = service.items[0].spec.ports[0].node_port
+                            port = service.items[0].spec.ports[0].port
+                            ip = service.items[0].spec.cluster_ip
+                        else:
+                            print("no replicas ready")
+                    else:
+                        print("no deployment found")
+                else:
+                    print("service is down")
+
             except Exception as e:
-                print("#DEBUG:Container status error handling")
+                print("#DEBUG:deployment status error handling")
                 print(e)
-                pass
-            data[container_app] = dict(
-                {"vnc_pass": vnc_pass, "container_status": status, "port": container.container_port})
+            data[app] = dict(
+                {"vnc_pass": vnc_pass, "deployment_status": status, "ip": ip, "port": port})
     return render(request,
                   "main/main.html",
                   {"data": data})
@@ -91,44 +227,3 @@ def login_request(request):
     return render(request,
                   "main/login.html",
                   {"form": form})
-
-
-def start_container(request, app):
-    if request.user.is_authenticated:
-        if not request.user.is_superuser and not request.user.is_staff:
-            container = Containers.objects.get(container_user=request.user, app_name=app)
-
-            run_docker(app_name=container.app_name,
-                       port=container.container_port,
-                       container_name=container.container_name,
-                       vnc_password=hashlib.md5(container.container_vnc_password.encode("utf-8")).hexdigest(),
-                       path=os.path.join(settings.PARENT_DIR, hashlib.md5(f'{request.user.id}'.encode("utf-8")).hexdigest())
-                       )
-            # TODO : vulnerability, args should be generated dynamically to avoid injection ( port & container_name )
-            new_instance = Instances.objects.get_or_create(container=container, instance_name=f'{container.app_name}')
-
-    return redirect("main:homepage")
-
-
-def stop_container(request, app):
-    if request.user.is_authenticated:
-        client = docker.from_env()
-        container_name = request.user.container_user.get(app_name=app).container_name
-        container = client.containers.get(container_name)
-        container.stop()
-
-    return redirect("main:homepage")
-
-
-def watch_dog_notification(request):
-    client = docker.from_env()
-    instances = Instances.objects.all()
-    actif_containers = []
-    print("actif_containers", actif_containers)
-    for container in client.containers.list():
-        actif_containers.append(container.name)
-    for instance in instances:
-        print("Instance", instance.container.container_name)
-        if instance.container.container_name not in actif_containers:
-            instance.delete()
-    return HttpResponse("OK")
