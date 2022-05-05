@@ -46,8 +46,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main.apps.MainConfig',
-    'rest_framework',
-    'kubernetes_manager',
 ]
 
 MIDDLEWARE = [
