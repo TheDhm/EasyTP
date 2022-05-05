@@ -16,15 +16,17 @@ container = client.V1Container(name=name,
                                env=[client.V1EnvVar(name="VNC_PW",
                                                     value="0000")]
                                )
+
 spec = client.V1DeploymentSpec(selector=client.V1LabelSelector(match_labels={"app": name}),
-                               replicas=1,
-                               template=client.V1PodTemplateSpec(metadata=client.V1ObjectMeta(labels={"app": name}),
+                               replicas=2,
+                               template=client.V1PodTemplateSpec(metadata=client.V1ObjectMeta(labels={"app": name,
+                                                                                                      "appDep": "test"}),
                                                                  spec=client.V1PodSpec(containers=[container]))
                                )
 
 deployment = client.V1Deployment(api_version="apps/v1",
                                  kind="Deployment",
-                                 metadata=client.V1ObjectMeta(name=name + "-deployment"),
+                                 metadata=client.V1ObjectMeta(name=name + "-deployment",labels={"dep": name}),
                                  spec=spec
                                  )
 

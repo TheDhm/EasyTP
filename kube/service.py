@@ -27,11 +27,12 @@ manifest = {
     "kind": "Service",
     "apiVersion": "v1",
     "metadata": {
-        "name": "gns3-service"
+        "name": "gns3-service",
+        "labels": {"appServ": "gns3Serv"}
     },
     "spec": {
         "selector": {
-            "app": "gns3"
+            "appDep": "test"
         },
         "ports": [
             {
