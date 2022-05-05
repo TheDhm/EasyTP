@@ -45,13 +45,13 @@ class AccessGroup(models.Model):
         return f'{self.get_group_display()}'
 
     def has_access_to(self):
-        return ", ".join([a.name for a in self.apps.all()])
+        return ", ".join([app.name for app in self.apps.all()])
 
 
 class App(models.Model):
     name = models.CharField(max_length=50, blank=False, unique=True)
     group = models.ManyToManyField(AccessGroup, related_name='apps', blank=True)
-    images = models.CharField(max_length=10)
+    images = models.CharField(max_length=30)
 
     def __str__(self):
         return f'{self.name}'
@@ -98,32 +98,6 @@ class DefaultUser(AbstractUser):
         if not self.group:
             return f'Not in a group yet'
         return self.group.has_access_to()
-
-
-class Containers(models.Model):
-    container_user = models.ForeignKey(DefaultUser, on_delete=models.CASCADE, default=None,
-                                       related_name="container_user")
-    app_name = models.CharField(max_length=200, default=None, blank=False, null=True)
-    container_name = models.CharField(max_length=200, default=None, blank=False, null=True)
-    container_port = models.CharField(max_length=200, default=None, blank=False, null=True)
-    container_vnc_user = models.CharField(max_length=200, default=None, blank=False, null=True)
-    container_vnc_password = models.CharField(max_length=200, default=None, blank=False, null=True)
-
-    date_created = models.DateTimeField(auto_now_add=True, blank=True)
-    date_modified = models.DateTimeField(auto_now=True, blank=True)
-
-    def __str__(self):
-        return f'{self.container_user.username}:{self.container_name}:{self.container_port}'
-
-
-class Instances(models.Model):
-    container = models.OneToOneField(Containers, on_delete=models.CASCADE, default=None, related_name="container")
-    instance_name = models.CharField(max_length=200, default=None, blank=False, null=True)
-    date_created = models.DateTimeField(auto_now_add=True, blank=True)
-    date_modified = models.DateTimeField(auto_now=True, blank=True)
-
-    def __str__(self):
-        return f'{self.container}:{self.instance_name}'
 
 
 class UsersFromCSV(models.Model):
@@ -187,29 +161,34 @@ class UsersFromCSV(models.Model):
         return self.role + 's'
 
 
-@receiver(post_save, sender=DefaultUser)
-def generate_container(sender, instance, created, **kwargs):
-    if created:
-        port_calculator = 0
-        n_of_apps = len(settings.DEFAULT_APP_NAME)
-        # create dir for user
-        user_directory = hashlib.md5(f'{instance.id}'.encode("utf-8")).hexdigest()
-        path = os.path.join(settings.PARENT_DIR, user_directory)
-        try:
-            os.mkdir(path)
-        except OSError as error:
-            print(error)
+class Pod(models.Model):
+    pod_user = models.ForeignKey(DefaultUser, on_delete=models.CASCADE, default=None,
+                                 related_name="pod_user")
+    app_name = models.CharField(max_length=200, default=None, blank=False, null=True)
+    pod_name = models.CharField(max_length=200, default=None, blank=False, null=True)
+    # pod_port = models.CharField(max_length=200, default=None, blank=False, null=True)
+    pod_vnc_user = models.CharField(max_length=200, default=None, blank=False, null=True)
+    pod_vnc_password = models.CharField(max_length=200, default=None, blank=False, null=True)
 
-        for app in settings.DEFAULT_APP_NAME:
-            # app_name = settings.DEFAULT_APP_LIST[app]
-            model = Containers(container_user=instance,
-                               app_name=app,
-                               container_name=hashlib.md5(
-                                   f'{app}:{instance.username}:{instance.id}'.encode("utf-8")).hexdigest(),
-                               container_port=settings.DEFAULT_APP_PORT_RANGE + str(
-                                   instance.id * n_of_apps - port_calculator).zfill(4),
-                               container_vnc_user=uuid.uuid4().hex[:6],
-                               container_vnc_password=uuid.uuid4().hex
-                               )
-            model.save()
-            port_calculator += 1
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_modified = models.DateTimeField(auto_now=True, blank=True)
+    pod_namespace = models.CharField(max_length=200, default=None, blank=False, null=True)
+
+    def __str__(self):
+        return f'{self.pod_user.username}:{self.pod_name}:{self.app_name}'
+
+
+@receiver(post_save, sender=DefaultUser)
+def generate_pods(sender, instance, created, **kwargs):
+    if created:
+        for app in instance.group.apps.all():
+            app_name = app.name
+            pod = Pod(pod_user=instance,
+                      app_name=app_name,
+                      pod_name=hashlib.md5(
+                                   f'{app_name}:{instance.username}:{instance.id}'.encode("utf-8")).hexdigest(),
+                      pod_vnc_user=uuid.uuid4().hex[:6],
+                      pod_vnc_password=uuid.uuid4().hex,
+                      pod_namespace=app_name.lower()
+                      )
+            pod.save()
