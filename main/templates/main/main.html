@@ -26,17 +26,17 @@
         <div class="sub header">Manage your machines here</div>
       </div>
     </h2>
-        {% for container, values in data.items %}
+        {% for application, values in data.items %}
         <table class="ui celled striped table">
             <thead>
                 <tr>
                     <th class="center aligned" colspan="3">
-                        {{ container }}
+                        {{ application }}
                     </th>
                 </tr>
             </thead>
             <tbody>
-            {% if values.container_status %}
+            {% if values.deployment_status %}
 
                 <tr>
                 <td class="right aligned collapsing">
@@ -44,10 +44,10 @@
                 </td>
 
                 <td class="collapsing">
-                    <a target="_blank" href="http://localhost:{{values.port}}"><h5 class="ui left aligned">http://localhost:{{values.port}}/</h5></a>
+                    <a target="_blank" href="http://{{ values.ip }}:{{values.port}}"><h5 class="ui left aligned">http://{{ values.ip }}:{{values.port}}/</h5></a>
                 </td>
                 <td class="right aligned collapsing">
-                    <a target="_blank" href="http://localhost:{{values.port}}/vnc.html?password={{values.vnc_pass}}&path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true"><h6 class="ui center aligned blue icon header"><i class="desktop large icon"></i><div class="content">Direct connect</div></h6></a>
+                    <a target="_blank" href="http://{{ values.ip }}:{{values.port}}/vnc.html?password={{values.vnc_pass}}&path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true"><h6 class="ui center aligned blue icon header"><i class="desktop large icon"></i><div class="content">Direct connect</div></h6></a>
                 </td>
                 </tr>
                 <tr>
@@ -56,7 +56,7 @@
                     </td>
                     <td><strong>{{values.vnc_pass}}</strong></td>
                 <td>
-                    <a  href="{% url "main:stop_container" app=container %}"><h6 class="ui center aligned orange icon header"><i class="pause large icon"></i><div class="content">Stop Machine</div></h6></a>
+                    <a  href="{% url "main:stop_pod" app_name=application %}"><h6 class="ui center aligned orange icon header"><i class="pause large icon"></i><div class="content">Stop Machine</div></h6></a>
                 </td>
                 </tr>
                 </table>
@@ -66,7 +66,7 @@
                     <h6 class="ui center aligned red icon header"><i class="power off large icon"></i><div class="content">Machine OFF</div></h6>
                 </td>
                 <td class="right aligned collapsing">
-                    <a href="{% url "main:start_container" app=container %}"><h6 class="ui center aligned blue icon header"><i class="play large icon"></i><div class="content">Start Machine</div></h6></a>
+                    <a href="{% url "main:start_pod" app_name=application %}"><h6 class="ui center aligned blue icon header"><i class="play large icon"></i><div class="content">Start Machine</div></h6></a>
                 </td>
                 </tr>
                 </table>
