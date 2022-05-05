@@ -1,5 +1,5 @@
 from django.contrib import admin, messages
-from .models import Containers, Instances, DefaultUser, AccessGroup, App, UsersFromCSV
+from .models import DefaultUser, AccessGroup, App, UsersFromCSV, Pod
 from django.contrib.auth.admin import UserAdmin, Group
 from django.utils.translation import gettext_lazy as _
 from .forms import CustomUserCreationForm, CustomAppForm, UsersFromCSVForm
@@ -71,10 +71,8 @@ class AppAdmin(admin.ModelAdmin):
     form = CustomAppForm
 
 
-# admin.site.register(Containers)
-# admin.site.register(Instances)
+admin.site.register(Pod)
 admin.site.register(UsersFromCSV, UsersFromCSVAdmin)
 admin.site.register(AccessGroup, AccessGroupAdmin)
 admin.site.register(App, AppAdmin)
 admin.site.unregister(Group)
-# Register your models here.
