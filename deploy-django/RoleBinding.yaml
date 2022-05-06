@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: django-account-binding
+  namespace: django-space
+subjects:
+- kind: ServiceAccount
+  name: django-account # Name of the ServiceAccount
+  namespace: django-space
+roleRef:
+  kind: Role # This must be Role or ClusterRole
+  name: django-role # This must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: django-account-binding-in-apps
+  namespace: apps
+subjects:
+- kind: ServiceAccount
+  name: django-account # Name of the ServiceAccount
+  namespace: django-space
+roleRef:
+  kind: Role # This must be Role or ClusterRole
+  name: django-role-in-apps # This must match the name of the Role or ClusterRole you wish to bind to
+  apiGroup: rbac.authorization.k8s.io
