@@ -27,7 +27,7 @@ def generate_pod_if_not_exist(pod_user, app_name, pod_name, pod_vnc_user, pod_vn
 
 @autotask
 def create_service(pod_name, app_name):
-    config.load_kube_config()
+    config.load_incluster_config()
 
     api_instance = client.CoreV1Api()
 
@@ -54,14 +54,14 @@ def create_service(pod_name, app_name):
     }
 
     try:
-        api_response = api_instance.create_namespaced_service(namespace='default', body=manifest, pretty='true')
+        api_response = api_instance.create_namespaced_service(namespace='apps', body=manifest, pretty='true')
     except ApiException as e:
         print("Exception when calling CoreV1Api->create_namespaced_endpoints: %s\n" % e)
 
 
 @autotask
 def deploy_app(pod_name, app_name, image, vnc_password, *args, **kwargs):
-    config.load_kube_config()
+    config.load_incluster_config()
 
     apps_api = client.AppsV1Api()
     deployment = {
@@ -112,7 +112,7 @@ def deploy_app(pod_name, app_name, image, vnc_password, *args, **kwargs):
         }
     }
     try:
-        apps_api.create_namespaced_deployment(namespace="default", body=deployment)
+        apps_api.create_namespaced_deployment(namespace="apps", body=deployment)
     except ApiException as e:
         print("error while deploying: ", e)
 
@@ -165,14 +165,14 @@ def homepage(request):
             vnc_pass = hashlib.md5(vnc_pass.encode("utf-8")).hexdigest()
 
             try:
-                config.load_config()
+                config.load_incluster_config()
 
                 api_instance = client.CoreV1Api()
                 apps_instance = client.AppsV1Api()
 
-                service = api_instance.list_namespaced_service(namespace="default",
+                service = api_instance.list_namespaced_service(namespace="apps",
                                                                label_selector="serviceApp={}".format(pod_name))
-                deployment = apps_instance.list_namespaced_deployment(namespace="default",
+                deployment = apps_instance.list_namespaced_deployment(namespace="apps",
                                                                       label_selector="deploymentApp={}".format(
                                                                           pod_name))
 
