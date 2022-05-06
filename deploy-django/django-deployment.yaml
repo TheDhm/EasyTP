@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: django-space
+  name: django
+  labels:
+    dep: djangoDep
+spec:
+  selector:
+    matchLabels:
+      app: django
+  replicas: 2
+  template:
+    metadata:
+      name: django-pod
+      namespace: django-space
+      labels:
+        app: django
+    spec:
+      containers:
+      - name: django
+        image:  django-app:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+      serviceAccountName: django-account
