@@ -21,13 +21,16 @@ def generate_pod_if_not_exist(pod_user, app_name, pod_name, pod_vnc_user, pod_vn
               app_name=app_name,
               pod_vnc_user=pod_vnc_user,
               pod_vnc_password=pod_vnc_password,
-              pod_namespace=app_name.lower())
+              pod_namespace="apps")
     pod.save()
 
 
 @autotask
 def create_service(pod_name, app_name):
-    config.load_incluster_config()
+    try:
+        config.load_kube_config()
+    except ApiException:
+        config.load_incluster_config()
 
     api_instance = client.CoreV1Api()
 
@@ -61,9 +64,13 @@ def create_service(pod_name, app_name):
 
 @autotask
 def deploy_app(pod_name, app_name, image, vnc_password, *args, **kwargs):
-    config.load_incluster_config()
+    try:
+        config.load_kube_config()
+    except ApiException:
+        config.load_incluster_config()
 
     apps_api = client.AppsV1Api()
+
     deployment = {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -121,11 +128,11 @@ def start_pod(request, app_name):
     if request.user.is_authenticated:
         pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
         app = App.objects.get(name=app_name)
-        print(hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest())
+        # print(hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest())
 
         deploy_app(pod_name=pod.pod_name,
                    app_name=app_name.lower(),
-                   image=app.images,
+                   image=app.image,
                    vnc_password=hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest())
 
         create_service(pod_name=pod.pod_name, app_name=app_name.lower())
@@ -133,7 +140,28 @@ def start_pod(request, app_name):
 
 
 def stop_pod(request, app_name):
-    # TODO
+    if request.user.is_authenticated:
+        pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
+        pod_name = pod.pod_name
+
+        try:
+            config.load_kube_config()
+        except ApiException:
+            config.load_incluster_config()
+
+        api_instance = client.CoreV1Api()
+        apps_instance = client.AppsV1Api()
+        app_name = app_name.lower()
+
+        try:
+            deleted_service = api_instance.delete_namespaced_service(namespace="apps",
+                                                                     name=app_name + "-service-" + pod_name)
+
+            deleted_deployment = apps_instance.delete_namespaced_deployment(namespace="apps",
+                                                                            name=app_name + "-deployment-" + pod_name)
+        except ApiException as a:
+            print("delete exception", a)
+
     return redirect("main:homepage")
 
 
@@ -149,7 +177,12 @@ def homepage(request):
             status = False
             port = None
             ip = None
-            pod = Pod.objects.get(pod_user=request.user, app_name=app.name)
+
+            try:
+                pod = Pod.objects.get(pod_user=request.user, app_name=app.name)
+            except Pod.DoesNotExist:
+                pod = None
+
             if pod:
                 vnc_pass = pod.pod_vnc_password
                 pod_name = pod.pod_name
@@ -159,13 +192,21 @@ def homepage(request):
                     f'{app_name}:{user.username}:{user.id}'.encode("utf-8")).hexdigest()
                 pod_vnc_user = uuid.uuid4().hex[:6]
                 pod_vnc_password = uuid.uuid4().hex
-                generate_pod_if_not_exist(pod_user=user, pod_name=pod_name, )
+                generate_pod_if_not_exist(pod_user=user,
+                                          pod_name=pod_name,
+                                          app_name=app.name,
+                                          pod_vnc_user=pod_vnc_user,
+                                          pod_vnc_password=pod_vnc_password
+                                          )
                 vnc_pass = pod_vnc_password
 
             vnc_pass = hashlib.md5(vnc_pass.encode("utf-8")).hexdigest()
 
             try:
-                config.load_incluster_config()
+                try:
+                    config.load_kube_config()
+                except ApiException:
+                    config.load_incluster_config()
 
                 api_instance = client.CoreV1Api()
                 apps_instance = client.AppsV1Api()
