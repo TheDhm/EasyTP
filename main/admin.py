@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 from .models import DefaultUser, AccessGroup, App, UsersFromCSV, Pod
 from django.contrib.auth.admin import UserAdmin, Group
 from django.utils.translation import gettext_lazy as _
-from .forms import CustomUserCreationForm, CustomAppForm, UsersFromCSVForm
+from .forms import CustomUserCreationForm, CustomAppForm, UsersFromCSVForm, CustomAccessGroup
 from django.urls import path
 from django.shortcuts import redirect, reverse
 
@@ -25,6 +25,7 @@ class CustomUserAdmin(UserAdmin):
         }),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
+
     add_fieldsets = (None, {
             'classes': ('wide',),
             'fields': ('email', 'password1', 'password2', 'role', 'group'),
@@ -61,6 +62,7 @@ class AccessGroupAdmin(admin.ModelAdmin):
         'group',
         'has_access_to',
     )
+    form = CustomAccessGroup
 
 
 class AppAdmin(admin.ModelAdmin):
