@@ -18,7 +18,7 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists
 
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends default-jre gcc tint2 feh && \
+    apt-get install -y --no-install-recommends default-jre gcc tint2 feh dbus-x11 gnome-icon-theme thunar gedit && \
     rm -rf /var/lib/apt/lists
 
 
