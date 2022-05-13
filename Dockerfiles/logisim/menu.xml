@@ -3,12 +3,17 @@
     <menu id="root-menu" label="Openbox 3">
         <item label="Logisim">
             <action name="Execute">
-                <execute>/usr/bin/logisim</execute>
+                <execute>java -jar /logisim/logisim-generic-2.7.1.jar</execute>
             </action>
         </item>
         <item label="Terminal">
             <action name="Execute">
                 <execute>/usr/bin/lxterminal</execute>
+            </action>
+        </item>
+        <item label="File Manager">
+            <action name="Execute">
+                <execute>/usr/bin/thunar</execute>
             </action>
         </item>
     </menu>
