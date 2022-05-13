@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 from .models import DefaultUser, AccessGroup, App, UsersFromCSV, Pod
 from django.contrib.auth.admin import UserAdmin, Group
 from django.utils.translation import gettext_lazy as _
-from .forms import CustomUserCreationForm, CustomAppForm, UsersFromCSVForm, CustomAccessGroup
+from .forms import CustomUserCreationForm, CustomAppForm, UsersFromCSVForm, CustomAddAccessGroup, CustomChangeAccessGroup
 from django.urls import path
 from django.shortcuts import redirect, reverse
 
@@ -62,7 +62,20 @@ class AccessGroupAdmin(admin.ModelAdmin):
         'group',
         'has_access_to',
     )
-    form = CustomAccessGroup
+    form = CustomChangeAccessGroup
+
+    add_form = CustomAddAccessGroup  # It is not a native django field.
+    # I created this field and use it in get_form method.
+
+    def get_form(self, request, obj=None, **kwargs):
+        """
+        Use special form during foo creation
+        """
+        defaults = {}
+        if obj is None:
+            defaults['form'] = self.add_form
+        defaults.update(kwargs)
+        return super().get_form(request, obj, **defaults)
 
 
 class AppAdmin(admin.ModelAdmin):
