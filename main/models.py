@@ -29,7 +29,7 @@ class AccessGroup(models.Model):
     CP2 = '2CP'
     CS1 = '1CS'
     CS2 = '2CS'
-    FULL = 'FUL'
+    FULL = 'FULL'
 
     GROUPS = [
         (FULL, 'Full Access Group'),
@@ -39,10 +39,11 @@ class AccessGroup(models.Model):
         (CS2, 'Second Cycle 2'),
     ]
 
-    group = models.CharField(max_length=3, choices=GROUPS, default=CP1, unique=True, blank=False)
+    group = models.CharField(max_length=5, default=CP1, unique=True, blank=False)
+    description = models.CharField(max_length=20, blank=False, default="no description yet")
 
     def __str__(self):
-        return f'{self.get_group_display()}'
+        return f'{self.group}:{self.description}'
 
     def has_access_to(self):
         return ", ".join([app.name for app in self.apps.all()])
@@ -51,13 +52,13 @@ class AccessGroup(models.Model):
 class App(models.Model):
     name = models.CharField(max_length=50, blank=False, unique=True)
     group = models.ManyToManyField(AccessGroup, related_name='apps', blank=True)
-    images = models.CharField(max_length=30)
+    image = models.CharField(max_length=30)
 
     def __str__(self):
         return f'{self.name}'
 
     def groups(self):
-        return ", ".join([g.get_group_display() for g in self.group.all()])
+        return ", ".join([g.group for g in self.group.all()])
 
 
 class DefaultUser(AbstractUser):
