@@ -63,7 +63,7 @@ def create_service(pod_name, app_name):
 
 
 @autotask
-def deploy_app(pod_name, app_name, image, vnc_password, *args, **kwargs):
+def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **kwargs):
     try:
         config.load_kube_config()
     except ApiException:
@@ -110,8 +110,30 @@ def deploy_app(pod_name, app_name, image, vnc_password, *args, **kwargs):
                                 {
                                     "name": "VNC_PW",
                                     "value": vnc_password
+                                },
+                                {
+                                    "name": "USER_HOSTNAME",
+                                    "value": user_hostname
+                                }
+                            ],
+                            "volumeMounts": [
+                                {
+                                    "name": "nfs-kube",
+                                    "mountPath": "/data",
+                                    "subPath": app_name + "/" + pod_name
                                 }
                             ]
+
+                        }
+                    ],
+                    "volumes": [
+                        {
+                            "name": "nfs-kube",
+                            "nfs":
+                                {
+                                    "server": "192.168.0.196",
+                                    "path": "/mnt/nfs_share"
+                                }
                         }
                     ]
                 }
@@ -133,7 +155,8 @@ def start_pod(request, app_name):
         deploy_app(pod_name=pod.pod_name,
                    app_name=app_name.lower(),
                    image=app.image,
-                   vnc_password=hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest())
+                   vnc_password=hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest(),
+                   user_hostname=request.user.username)
 
         create_service(pod_name=pod.pod_name, app_name=app_name.lower())
     return redirect("main:homepage")
@@ -156,11 +179,14 @@ def stop_pod(request, app_name):
         try:
             deleted_service = api_instance.delete_namespaced_service(namespace="apps",
                                                                      name=app_name + "-service-" + pod_name)
+        except ApiException as a:
+            print("delete service exception", a)
 
+        try:
             deleted_deployment = apps_instance.delete_namespaced_deployment(namespace="apps",
                                                                             name=app_name + "-deployment-" + pod_name)
         except ApiException as a:
-            print("delete exception", a)
+            print("delete deployment exception", a)
 
     return redirect("main:homepage")
 
@@ -229,7 +255,7 @@ def homepage(request):
                     else:
                         print("no deployment found")
                 else:
-                    print("service is down")
+                    print("service ", app, " is down")
 
             except Exception as e:
                 print("#DEBUG:deployment status error handling")
