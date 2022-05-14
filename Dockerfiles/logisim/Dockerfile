@@ -49,4 +49,4 @@ VOLUME /data
 
 RUN mkdir -p /home/.vnc
 
-CMD ["sh", "-c", "chown app:app /data /dev/stdout && echo ${VNC_PW} | tigervncpasswd -f > /home/.vnc/passwd && exec gosu app supervisord"]
+CMD ["sh", "-c", "chown app:app /dev/stdout && echo ${VNC_PW} | tigervncpasswd -f > /home/.vnc/passwd && exec gosu app supervisord"]
