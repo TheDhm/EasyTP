@@ -59,7 +59,7 @@ class UsersFromCSVAdmin(admin.ModelAdmin):
 
 class AccessGroupAdmin(admin.ModelAdmin):
     list_display = (
-        'group',
+        '__str__',
         'has_access_to',
     )
     form = CustomChangeAccessGroup
