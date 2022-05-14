@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: django
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       name: django-pod
