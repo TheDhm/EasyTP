@@ -43,7 +43,7 @@ class AccessGroup(models.Model):
     description = models.CharField(max_length=20, blank=False, default="no description yet")
 
     def __str__(self):
-        return f'{self.group}:{self.description}'
+        return f'{self.group}: {self.description}'
 
     def has_access_to(self):
         return ", ".join([app.name for app in self.apps.all()])
