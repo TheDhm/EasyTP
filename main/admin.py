@@ -5,13 +5,15 @@ from django.utils.translation import gettext_lazy as _
 from .forms import CustomUserCreationForm, CustomAppForm, UsersFromCSVForm, CustomAddAccessGroup, CustomChangeAccessGroup
 from django.urls import path
 from django.shortcuts import redirect, reverse
-
+from .custom_actions import make_1cp, make_2cp, make_1cs, make_2cs
 
 admin.site.site_header = 'System Administration'
 
 
 @admin.register(DefaultUser)
 class CustomUserAdmin(UserAdmin):
+    actions = [make_1cp, make_2cp, make_1cs, make_2cs]
+
     list_display = (
         'username', 'email', 'is_staff', 'role', 'group', 'apps_available'
         )
