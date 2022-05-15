@@ -5,7 +5,6 @@ from django.db.models.signals import post_save
 from django.conf import settings
 import hashlib
 import uuid
-import os
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from .custom_validators import EsiEmailValidator, validate_emails_in_file
@@ -25,11 +24,11 @@ def send_password(email_to, username, password):
 
 
 class AccessGroup(models.Model):
-    CP1 = '1CP'
-    CP2 = '2CP'
-    CS1 = '1CS'
-    CS2 = '2CS'
-    FULL = 'FULL'
+    FULL = 'Full Access Group'
+    CP1 = 'Cycle Préparatoire 1'
+    CP2 = 'Cycle Préparatoire 2'
+    CS1 = 'Second Cycle 1'
+    CS2 = 'Second Cycle 2'
 
     GROUPS = [
         (FULL, 'Full Access Group'),
@@ -39,13 +38,14 @@ class AccessGroup(models.Model):
         (CS2, 'Second Cycle 2'),
     ]
 
-    group = models.CharField(max_length=5, default=CP1, unique=True, blank=False)
-    description = models.CharField(max_length=20, blank=False, default="no description yet")
+    name = models.CharField(max_length=25, default=CP1, unique=True, blank=False)
 
     def __str__(self):
-        return f'{self.group}: {self.description}'
+        return f'{self.name}'
 
     def has_access_to(self):
+        if self.name == self.FULL:
+            return "All Apps"
         return ", ".join([app.name for app in self.apps.all()])
 
 
@@ -58,7 +58,7 @@ class App(models.Model):
         return f'{self.name}'
 
     def groups(self):
-        return ", ".join([g.group for g in self.group.all()])
+        return ", ".join([g.name for g in self.group.all()])
 
 
 class DefaultUser(AbstractUser):
@@ -91,7 +91,7 @@ class DefaultUser(AbstractUser):
 
         # add superusers,staff and teachers to FULL ACCESS GROUP
         if self.role != self.STUDENT:
-            self.group = AccessGroup.objects.get_or_create(group=AccessGroup.FULL)[0]
+            self.group = AccessGroup.objects.get_or_create(name=AccessGroup.FULL)[0]
 
         super().save(*args, **kwargs)
 
