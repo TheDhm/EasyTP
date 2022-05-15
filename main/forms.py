@@ -33,21 +33,22 @@ class CustomAppForm(forms.ModelForm):
     # add every new app to FULL ACCESS GROUP
     def clean_group(self):
         data = self.cleaned_data['group']
-        AccessGroup.objects.get_or_create(group=AccessGroup.FULL)
-        fag = AccessGroup.objects.filter(group=AccessGroup.FULL)
+        AccessGroup.objects.get_or_create(name=AccessGroup.FULL)
+        fag = AccessGroup.objects.filter(name=AccessGroup.FULL)
         data |= fag
 
         return data
 
 
 class CustomChangeAccessGroup(forms.ModelForm):
-    def get_group(self):
-        return self.cleaned_data["group"]
-
     apps = forms.ModelMultipleChoiceField(queryset=App.objects.all(), required=True,
                                           help_text='Choose which apps to give access to',
-                                          widget=forms.CheckboxSelectMultiple,
-                                          initial=[])  # TODO
+                                          widget=forms.CheckboxSelectMultiple)
+
+    def __init__(self, *args, **kwargs):
+        super(CustomChangeAccessGroup, self).__init__(*args, **kwargs)
+        group = kwargs['instance']
+        self.fields['apps'].initial = [app for app in group.apps.all()]
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -65,20 +66,30 @@ class CustomChangeAccessGroup(forms.ModelForm):
 
 
 class CustomAddAccessGroup(forms.ModelForm):
+    name = forms.ChoiceField(choices=[('add_new', 'ADD New')] + AccessGroup.GROUPS,
+                             label="Legacy access groups",
+                             help_text='choose legacy group from list')
+    add_new = forms.CharField(max_length=25, required=False,
+                              help_text='to add a new group select ADD NEW in legacy group',
+                              label='Add new group')
 
-    group = forms.ChoiceField(choices=AccessGroup.GROUPS, label="Legacy access groups")
-    other = forms.CharField(max_length=3, required=False,
-                            help_text='ID of new group ,if specified it\'ll override group choice',
-                            label='Add new group')
-    description = forms.CharField(max_length=20, required=False,
-                                  help_text='Description of the new group, required if new group specified')
     apps = forms.ModelMultipleChoiceField(queryset=App.objects.all(), required=True,
                                           help_text='Choose which apps to give access to',
                                           widget=forms.CheckboxSelectMultiple)
 
+    def __init__(self, *args, **kwargs):
+        data = args[0] if args else kwargs.get('data', None)
+        super(CustomAddAccessGroup, self).__init__(*args, **kwargs)
+        if data:
+            if data['add_new'] and data['name'] == 'add_new':
+                _mutable = data._mutable
+                data._mutable = True
+                data['name'] = data['other']
+                data._mutable = _mutable
+
+                self.fields['name'].choices += [(data['other'], data['other'])]
+
     def save(self, commit=True):
-        if self.cleaned_data['other']:
-            self.cleaned_data['group'] = self.cleaned_data['other']
         instance = super().save(commit=False)
 
         apps = self.cleaned_data['apps']
