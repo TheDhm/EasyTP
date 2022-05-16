@@ -9,13 +9,14 @@
 ### Modules
 ### 
 ## Getting started
-These instruction will get you a copy of this project up running on your local machine .
+These instructions will get you a copy of this project up running on your local machine .
 
 ### Prerequisites
-
+* Kubernetes Cluster
 * Docker
 * Python 3 *(you can get it from [here](https://www.python.org/downloads/))*
-* virtualenv 
+* virtualenv
+* cri-dockerd *(you can get it from [here](https://github.com/Mirantis/cri-dockerd))*
 ```sh
 pip install virtualenv
 ```
