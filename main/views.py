@@ -119,8 +119,12 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
                             "volumeMounts": [
                                 {
                                     "name": "nfs-kube",
-                                    "mountPath": "/data",
+                                    "mountPath": "/data/myData",
                                     "subPath": app_name + "/" + pod_name
+                                },
+                                {
+                                    "name": "nfs-kube-readonly",
+                                    "mountPath": "/data/readonly",
                                 }
                             ]
 
@@ -133,6 +137,14 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
                                 {
                                     "server": "192.168.0.196",
                                     "path": "/mnt/nfs_share"
+                                }
+                        },
+                        {
+                            "name": "nfs-kube-readonly",
+                            "nfs":
+                                {
+                                    "server": "192.168.0.196",
+                                    "path": "/mnt/nfs_share/readonly"
                                 }
                         }
                     ]
