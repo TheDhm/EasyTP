@@ -1,8 +1,8 @@
-FROM golang:1.14-buster AS easy-novnc-build
-WORKDIR /src
-RUN go mod init build && \
-    go get github.com/geek1011/easy-novnc@v1.1.0 && \
-    go build -o /bin/easy-novnc github.com/geek1011/easy-novnc
+#FROM golang:1.14-buster AS easy-novnc-build
+#WORKDIR /src
+#RUN go mod init build && \
+#    go get github.com/geek1011/easy-novnc@v1.1.0 && \
+#    go build -o /bin/easy-novnc github.com/geek1011/easy-novnc
 
 FROM debian:buster
 ENV DEBIAN_FRONTEND=noninteractive
@@ -29,7 +29,7 @@ WORKDIR /logisim
 RUN wget https://iweb.dl.sourceforge.net/project/circuit/2.7.x/2.7.1/logisim-generic-2.7.1.jar
 
 
-COPY --from=easy-novnc-build /bin/easy-novnc /usr/local/bin/
+COPY bin/easy-novnc /usr/local/bin/
 COPY menu.xml /etc/xdg/openbox/
 COPY supervisord.conf /etc/
 EXPOSE 8080
@@ -46,7 +46,10 @@ RUN cd /tmp/wallpaper && \
     cp /tmp/wallpaper/* /home/wallpaper/wallpaper.jpg
 
 VOLUME /data
+RUN mkdir /data/myData && \
+    mkdir /data/readonly \
 
 RUN mkdir -p /home/.vnc
 
-CMD ["sh", "-c", "chown app:app /dev/stdout && echo ${VNC_PW} | tigervncpasswd -f > /home/.vnc/passwd && exec gosu app supervisord"]
+
+CMD ["sh", "-c", "chown app:app /data /dev/stdout && echo ${VNC_PW} | tigervncpasswd -f > /home/.vnc/passwd && exec gosu app supervisord"]
