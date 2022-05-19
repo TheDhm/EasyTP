@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: django
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       name: django-pod
@@ -19,8 +19,23 @@ spec:
     spec:
       containers:
       - name: django
-        image:  django-app:latest
+        image:  django-app:prod
         imagePullPolicy: Never
         ports:
         - containerPort: 8000
+        env:
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-credentials
+                key: user
+
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-credentials
+                key: password
+
+          - name: POSTGRES_HOST
+            value: postgres-service
       serviceAccountName: django-account
