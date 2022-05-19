@@ -10,6 +10,7 @@ import hashlib
 from .custom_functions import autotask
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+from kubernetes.config import ConfigException
 
 app_name = "main"
 
@@ -29,7 +30,7 @@ def generate_pod_if_not_exist(pod_user, app_name, pod_name, pod_vnc_user, pod_vn
 def create_service(pod_name, app_name):
     try:
         config.load_kube_config()
-    except ApiException:
+    except ConfigException:
         config.load_incluster_config()
 
     api_instance = client.CoreV1Api()
@@ -66,7 +67,7 @@ def create_service(pod_name, app_name):
 def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **kwargs):
     try:
         config.load_kube_config()
-    except ApiException:
+    except ConfigException:
         config.load_incluster_config()
 
     apps_api = client.AppsV1Api()
@@ -181,7 +182,7 @@ def stop_pod(request, app_name):
 
         try:
             config.load_kube_config()
-        except ApiException:
+        except ConfigException:
             config.load_incluster_config()
 
         api_instance = client.CoreV1Api()
@@ -208,6 +209,7 @@ def homepage(request):
     if request.user.is_authenticated:
         if request.user.is_superuser:
             return render(request, 'main/admin.html')
+
         user = request.user
         apps = user.group.apps.all()
 
@@ -243,7 +245,7 @@ def homepage(request):
             try:
                 try:
                     config.load_kube_config()
-                except ApiException:
+                except ConfigException:
                     config.load_incluster_config()
 
                 api_instance = client.CoreV1Api()
