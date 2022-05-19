@@ -21,10 +21,10 @@ RUN pip install -r requirements.txt
 # copy project
 COPY . .
 
-# use option -v /var/run/docker.sock:/var/run/docker.sock
-RUN echo "" >> /var/run/docker.sock
-
-RUN chmod 666 /var/run/docker.sock
+## use option -v /var/run/docker.sock:/var/run/docker.sock
+#RUN echo "" >> /var/run/docker.sock
+#
+#RUN chmod 666 /var/run/docker.sock
 
 EXPOSE 8000
 
