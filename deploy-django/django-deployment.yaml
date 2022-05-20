@@ -19,7 +19,8 @@ spec:
     spec:
       containers:
       - name: django
-        image:  django-app:prod
+#        image:  django-app:prod
+        image:  django-app:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8000
