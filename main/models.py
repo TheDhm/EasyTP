@@ -190,6 +190,6 @@ def generate_pods(sender, instance, created, **kwargs):
                                    f'{app_name}:{instance.username}:{instance.id}'.encode("utf-8")).hexdigest(),
                       pod_vnc_user=uuid.uuid4().hex[:6],
                       pod_vnc_password=uuid.uuid4().hex,
-                      pod_namespace=app_name.lower()
+                      pod_namespace="apps"
                       )
             pod.save()
