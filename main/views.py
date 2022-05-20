@@ -71,6 +71,7 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
         config.load_incluster_config()
 
     apps_api = client.AppsV1Api()
+    user_hostname = user_hostname.replace('_', '-')  # " _ " not allowed in kubernetes hostname
 
     deployment = {
         "apiVersion": "apps/v1",
@@ -97,6 +98,7 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
                     }
                 },
                 "spec": {
+                    "hostname": user_hostname,
                     "containers": [
                         {
                             "name": app_name,
