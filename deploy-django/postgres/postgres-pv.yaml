@@ -3,13 +3,14 @@ kind: PersistentVolume
 metadata:
   name: postgres-volume
 spec:
-  storageClassName: manual
+  storageClassName: nfs
   capacity:
     storage: 500Mi
   accessModes:
     - ReadWriteMany
-  hostPath:
-    path: /mnt/data
+  nfs:
+    server: 192.168.0.196
+    path: "/mnt/nfs_share/DB"
   persistentVolumeReclaimPolicy: Retain
   claimRef:
     name: postgres-claim

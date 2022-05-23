@@ -14,9 +14,11 @@ spec:
         app: postgres-container
         tier: backend
     spec:
+      securityContext:
+        runAsUser: 1000
       containers:
         - name: postgres-container
-          image: postgres:9.6.6
+          image: postgres:14.3
           imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_USER
@@ -34,8 +36,9 @@ spec:
             - name: POSTGRES_DB
               value: kubernetes_django
 
-          ports:
-            - containerPort: 5432
+#            - name: POSTGRESQL_DATA_DIR
+#              value: "/var/lib/postgresql/data/pgdata"
+
           volumeMounts:
             - name: postgres-volume
               mountPath: /var/lib/postgresql/data
@@ -44,3 +47,8 @@ spec:
         - name: postgres-volume
           persistentVolumeClaim:
             claimName: postgres-claim
+#          hostPath:
+#            path: "/home/masterzulu/DB"
+#          nfs:
+#            server: 192.168.0.196
+#            path: "/mnt/nfs_share/DB"
