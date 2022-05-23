@@ -9,7 +9,7 @@ spec:
   selector:
     matchLabels:
       app: django
-  replicas: 2
+  replicas: 1
   template:
     metadata:
       name: django-pod
@@ -39,4 +39,7 @@ spec:
 
           - name: POSTGRES_HOST
             value: postgres-service
+
+          - name: POSTGRES_PORT
+            value: "5432"
       serviceAccountName: django-account
