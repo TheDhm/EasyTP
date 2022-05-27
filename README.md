@@ -12,31 +12,63 @@
 These instructions will get you a copy of this project up running on your local machine .
 
 ### Prerequisites
-* Kubernetes Cluster
 * Docker
-* Python 3 *(you can get it from [here](https://www.python.org/downloads/))*
-* virtualenv
 * cri-dockerd *(you can get it from [here](https://github.com/Mirantis/cri-dockerd))*
-```sh
-pip install virtualenv
-```
-### Create a virtual environement
+* Kubernetes (you can follow this [tutorial](https://phoenixnap.com/kb/install-kubernetes-on-ubuntu) to install kubeadm, kubelet and kubectl)
 
-```sh
-virtualenv "Your virtualenv name"  
-cd "Your virtualenv name"
-Scripts\activate
-```
+[//]: # (* Python 3 *&#40;you can get it from [here]&#40;https://www.python.org/downloads/&#41;&#41;*)
+
+[//]: # (* virtualenv)
+
+[//]: # (```sh)
+
+[//]: # (pip install virtualenv)
+
+[//]: # (```)
+
+[//]: # (### Create a virtual environement)
+
+[//]: # ()
+[//]: # (```sh)
+
+[//]: # (virtualenv "Your virtualenv name"  )
+
+[//]: # (cd "Your virtualenv name")
+
+[//]: # (Scripts\activate)
+
+[//]: # (```)
+
 ### Installation
-1. Clone the repo
+1. Create your cluster
+```sh
+swapoff -a
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16 --cri-socket=unix:///var/run/cri-dockerd.sock --apiserver-advertise-address=<your ip>
+
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+# install flannel: network plugin
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+# enable scheduling on master
+kubectl taint node --all node-role.kubernetes.io/master:NoSchedule-
+kubectl taint node --all node-role.kubernetes.io/control-plane:NoSchedule-
+```
+2. Clone the repo
 ```sh
 git clone https://github.com/TheDhm/container-manager-app.git
 ```
-2. Install required packages
+3. Create NFS storage (you can follow this [tutorial](https://www.tecmint.com/install-nfs-server-on-ubuntu/))
+    * create DB folder in your nfs server (for postgres DB)
+    * create USERDATA folder ( users storage space )
+    * make sure to change server IP in: views, persistent Volumes
+
+4. Build the web app image
 ```sh
-pip install -r requirements.txt
+cd container-manager-app
+docker build --rm -t django-app:latest .
 ```
-3. Before you start the project make sur to have these docker images locally :
+5. Before you start the project make sur to have these docker images locally :
 * [Gns3](https://hub.docker.com/r/younes46/gns)
 ```sh 
 docker pull younes46/gns
@@ -52,22 +84,18 @@ Build the dockerfiles in `Dockerfiles`
 ```sh 
 docker build -t <ImageName> <DockerfilePath>
 ```
-4. Change the directory for container volumes *(Persistant data)* in `Docker2CS/settings.py` to another path in your machine:
+6. Deploy everything XD
 ```sh
-PARENT_DIR = "/home/zulu/userdata"
+cd container-manager-app
+sh deploy-all.sh
 ```
-5. Make migrations & migrate
+7. Migrate
 ```sh
-python manage.py makemigrations
-python manage.py migrate
+kubectl -n django-space exec -it  <django pod> -- python manage.py migrate
 ```
-6. Create super user *(use @esi.dz email address)*
+8. Create superuser
 ```sh
-python manage.py createsuperuser
-```
-7. Run server 
-```sh
-python manage.py runserver
+kubectl -n django-space exec -it  <django pod> -- python manage.py createsuperuser
 ```
 
 ## Usage
