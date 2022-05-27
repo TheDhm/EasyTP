@@ -17,7 +17,7 @@ RUN python -m venv django
 RUN source django/bin/activate
 
 RUN pip install -r requirements.txt
-
+RUN pip install gunicorn
 # copy project
 COPY . .
 
@@ -28,5 +28,5 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:8000"]
-
+#CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:8000"]
+CMD ["gunicorn", "--bind", ":8000", "--workers", "3", "Docker2CS.wsgi"]
