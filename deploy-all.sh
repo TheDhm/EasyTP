@@ -44,9 +44,9 @@ echo " "
 
 echo "migrate and create super user and everything is done"
 #### migrations to DB ####
-# kubectl exec -it -n django-space <django pod> -- python manage.py migrate
+# kubectl -n django-space exec -it  <django pod> -- python manage.py migrate
 ### creating super user
-# kubectl exec -it -n django-space <django pod> -- python manage.py createsuperuser
+# kubectl -n django-space exec -it  <django pod> -- python manage.py createsuperuser
 
 
 
