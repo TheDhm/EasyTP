@@ -32,9 +32,12 @@ def validate_emails_in_file(file):
         sheet = openpyxl.load_workbook(file)
         sheet = sheet.active
 
-        for row in range(1, sheet.max_row):
-            for col in sheet.iter_cols(0):
-                emails.append(col[row].value)
+        # for row in range(1, sheet.max_row):
+        #     for col in sheet.iter_cols(0):
+        #         emails.append(col[row].value)
+
+        for row in range(2, sheet.max_row + 1):
+            emails.append(sheet.cell(row=row, column=1).value)
 
     for email in emails:
         if email:  # empty cases return None
