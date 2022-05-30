@@ -19,9 +19,30 @@
       <i class="universal access green large icon"></i>
       <div class="content">
         ADMIN DASHBOARD
-        <div class="sub header">Manage users here</div>
+        <div class="sub header">Manage system here</div>
       </div>
     </h2>
+        <table class="ui celled striped table">
+            <thead>
+                <tr>
+                    <th class="center aligned" colspan="3">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+               <tr>
+                <td class="right aligned collapsing">
+                    <a href="{% url 'admin:index' %}"><h6 class="ui center aligned orange icon header"><i class="cogs large icon"></i><div class="content">Admin</div></h6></a>
+                </td>
+                <td class="right aligned collapsing">
+                    <a href="#"><h6 class="ui center aligned blue icon header"><i class="desktop large icon"></i><div class="content">Student's machines</div></h6></a>
+                </td>
+                   <td class="right aligned collapsing">
+                    <a href="{%  url 'main:test_apps' %}"><h6 class="ui center aligned green icon header"><i class="play large icon"></i><div class="content">Test Apps</div></h6></a>
+                </td>
+                </tr>
+                </table>
     {% endif %}
     </div>
 {% endblock %}
