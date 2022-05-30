@@ -5,7 +5,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.conf import settings
-from .models import Pod, App
+from .models import Pod, App, DefaultUser
 import hashlib
 from .custom_functions import autotask
 from kubernetes import client, config
@@ -163,9 +163,12 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
 
 def start_pod(request, app_name):
     if request.user.is_authenticated:
-        pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
+        try:
+            pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
+        except Pod.DoesNotExist:
+            return redirect("main:homepage")
+
         app = App.objects.get(name=app_name)
-        # print(hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest())
 
         deploy_app(pod_name=pod.pod_name,
                    app_name=app_name.lower(),
@@ -174,12 +177,20 @@ def start_pod(request, app_name):
                    user_hostname=request.user.username)
 
         create_service(pod_name=pod.pod_name, app_name=app_name.lower())
+
+        if request.user.role != DefaultUser.STUDENT:
+            return redirect('main:test_apps')
+
     return redirect("main:homepage")
 
 
 def stop_pod(request, app_name):
     if request.user.is_authenticated:
-        pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
+        try:
+            pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
+        except Pod.DoesNotExist:
+            return redirect("main:homepage")
+
         pod_name = pod.pod_name
 
         try:
@@ -203,7 +214,89 @@ def stop_pod(request, app_name):
         except ApiException as a:
             print("delete deployment exception", a)
 
+        if request.user.role != DefaultUser.STUDENT:
+            return redirect('main:test_apps')
+
     return redirect("main:homepage")
+
+
+def display_apps(apps, user):
+    data = dict()
+    for app in apps:
+        status = False
+        port = None
+        ip = None
+
+        try:
+            pod = Pod.objects.get(pod_user=user, app_name=app.name)
+        except Pod.DoesNotExist:
+            pod = None
+
+        if pod:
+            vnc_pass = pod.pod_vnc_password
+            pod_name = pod.pod_name
+
+        else:  # create pod if not exist --> case where admin add new apps after user created
+            pod_name = hashlib.md5(
+                f'{app_name}:{user.username}:{user.id}'.encode("utf-8")).hexdigest()
+            pod_vnc_user = uuid.uuid4().hex[:6]
+            pod_vnc_password = uuid.uuid4().hex
+            generate_pod_if_not_exist(pod_user=user,
+                                      pod_name=pod_name,
+                                      app_name=app.name,
+                                      pod_vnc_user=pod_vnc_user,
+                                      pod_vnc_password=pod_vnc_password
+                                      )
+            vnc_pass = pod_vnc_password
+
+        vnc_pass = hashlib.md5(vnc_pass.encode("utf-8")).hexdigest()
+
+        try:
+            try:
+                config.load_kube_config()
+            except ConfigException:
+                config.load_incluster_config()
+
+            api_instance = client.CoreV1Api()
+            apps_instance = client.AppsV1Api()
+
+            service = api_instance.list_namespaced_service(namespace="apps",
+                                                           label_selector="serviceApp={}".format(pod_name))
+            deployment = apps_instance.list_namespaced_deployment(namespace="apps",
+                                                                  label_selector="deploymentApp={}".format(
+                                                                      pod_name))
+
+            if len(service.items) != 0:
+                if len(deployment.items) != 0:
+                    if deployment.items[0].status.ready_replicas:
+                        status = True
+                        # port = service.items[0].spec.ports[0].node_port
+                        port = service.items[0].spec.ports[0].port
+                        ip = service.items[0].spec.cluster_ip
+                    else:
+                        print("no replicas ready")
+                else:
+                    print("no deployment found")
+            else:
+                print("service ", app, " is down")
+
+        except Exception as e:
+            print("#DEBUG:deployment status error handling")
+            print(e)
+        data[app] = dict(
+            {"vnc_pass": vnc_pass, "deployment_status": status, "ip": ip, "port": port})
+
+    return data
+
+
+def test_apps(request):
+    data = dict()
+    if request.user.is_authenticated:
+        if request.user.role == DefaultUser.TEACHER or request.user.role == DefaultUser.ADMIN:
+            apps = App.objects.all()
+            data = display_apps(apps, request.user)
+
+    return render(request, 'main/main.html', {"data": data})
 
 
 def homepage(request):
@@ -212,72 +305,14 @@ def homepage(request):
         if request.user.is_superuser:
             return render(request, 'main/admin.html')
 
+        elif request.user.role == DefaultUser.TEACHER:
+            return render(request, 'main/teacher_home.html')
+
         user = request.user
         apps = user.group.apps.all()
 
-        for app in apps:
-            status = False
-            port = None
-            ip = None
+        data = display_apps(apps, user)
 
-            try:
-                pod = Pod.objects.get(pod_user=request.user, app_name=app.name)
-            except Pod.DoesNotExist:
-                pod = None
-
-            if pod:
-                vnc_pass = pod.pod_vnc_password
-                pod_name = pod.pod_name
-
-            else:  # create pod if not exist --> case where admin add new apps after user created
-                pod_name = hashlib.md5(
-                    f'{app_name}:{user.username}:{user.id}'.encode("utf-8")).hexdigest()
-                pod_vnc_user = uuid.uuid4().hex[:6]
-                pod_vnc_password = uuid.uuid4().hex
-                generate_pod_if_not_exist(pod_user=user,
-                                          pod_name=pod_name,
-                                          app_name=app.name,
-                                          pod_vnc_user=pod_vnc_user,
-                                          pod_vnc_password=pod_vnc_password
-                                          )
-                vnc_pass = pod_vnc_password
-
-            vnc_pass = hashlib.md5(vnc_pass.encode("utf-8")).hexdigest()
-
-            try:
-                try:
-                    config.load_kube_config()
-                except ConfigException:
-                    config.load_incluster_config()
-
-                api_instance = client.CoreV1Api()
-                apps_instance = client.AppsV1Api()
-
-                service = api_instance.list_namespaced_service(namespace="apps",
-                                                               label_selector="serviceApp={}".format(pod_name))
-                deployment = apps_instance.list_namespaced_deployment(namespace="apps",
-                                                                      label_selector="deploymentApp={}".format(
-                                                                          pod_name))
-
-                if len(service.items) != 0:
-                    if len(deployment.items) != 0:
-                        if deployment.items[0].status.ready_replicas:
-                            status = True
-                            # port = service.items[0].spec.ports[0].node_port
-                            port = service.items[0].spec.ports[0].port
-                            ip = service.items[0].spec.cluster_ip
-                        else:
-                            print("no replicas ready")
-                    else:
-                        print("no deployment found")
-                else:
-                    print("service ", app, " is down")
-
-            except Exception as e:
-                print("#DEBUG:deployment status error handling")
-                print(e)
-            data[app] = dict(
-                {"vnc_pass": vnc_pass, "deployment_status": status, "ip": ip, "port": port})
     return render(request,
                   "main/main.html",
                   {"data": data})
@@ -307,6 +342,4 @@ def login_request(request):
             messages.error(request, "Nom d'utilisateur ou mot de passe invalide(s) !")
     form = AuthenticationForm
 
-    return render(request,
-                  "main/login.html",
-                  {"form": form})
+    return render(request, "main/login.html", {"form": form})
