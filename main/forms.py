@@ -73,7 +73,7 @@ class CustomAddAccessGroup(forms.ModelForm):
                               help_text='to add a new group select ADD NEW in legacy group',
                               label='Add new group')
 
-    apps = forms.ModelMultipleChoiceField(queryset=App.objects.all(), required=True,
+    apps = forms.ModelMultipleChoiceField(queryset=App.objects.all(), required=False,
                                           help_text='Choose which apps to give access to',
                                           widget=forms.CheckboxSelectMultiple)
 
