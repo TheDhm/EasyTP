@@ -1,0 +1,49 @@
+{% extends "main/skeleten.html" %}
+{% block content %}
+    <div class="ui container">
+    {%if not request.user.is_authenticated%}
+    <h2 class="ui center aligned red icon header">
+      <i class="settings icon"></i>
+      <div class="content">
+        YOU ARE NOT CONNECTED
+        <div class="sub header">Please connect first to access your machines.</div>
+      </div>
+    </h2>
+    {% else %}
+        <div class="ui message">
+            <div class="header">
+            Hi, {{user.username}}, Welcome to your dashboard
+            </div>
+        </div>
+        <h2 class="center aligned ui icon header">
+        <i class="settings green large icon"></i>
+        <div class="content">
+            TEACHER DASHBOARD
+            <div class="sub header">Manage your Students here</div>
+        </div>
+    </h2>
+        <table class="ui celled striped table">
+            <thead>
+                <tr>
+                    <th class="center aligned" colspan="3">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+               <tr>
+                <td class="right aligned collapsing">
+                    <a href="#"><h6 class="ui center aligned orange icon header"><i class="upload large icon"></i><div class="content">Share Files</div></h6></a>
+                </td>
+                <td class="right aligned collapsing">
+                    <a href="#"><h6 class="ui center aligned blue icon header"><i class="users large icon"></i><div class="content">Student's machines</div></h6></a>
+                </td>
+                   <td class="right aligned collapsing">
+                    <a href="{%  url 'main:test_apps' %}"><h6 class="ui center aligned green icon header"><i class="play large icon"></i><div class="content">Test Apps</div></h6></a>
+                </td>
+                </tr>
+                </table>
+
+    {% endif %}
+    </div>
+{% endblock %}
