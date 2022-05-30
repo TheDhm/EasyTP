@@ -110,52 +110,62 @@ class UsersFromCSV(models.Model):
     role = models.CharField(max_length=1, choices=DefaultUser.ROLES, default=DefaultUser.STUDENT, blank=False)
     group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None)
 
+    def save_user(self, email, last_name, first_name):
+        # TODO
+        pass
+
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         emails = []
+        first_names = []
+        last_names = []
         if str(self.file).endswith('.csv'):
             data = csv.reader(self.file)
             header = next(data)
 
             for row in data:
                 emails.append(row[0])
+                last_names.append(row[1])
+                first_names.append(row[2])
+
         else:
             sheet = openpyxl.load_workbook(self.file)
             sheet = sheet.active
 
-            for row in range(1, sheet.max_row):
-                for col in sheet.iter_cols(0):
-                    emails.append(col[row].value)
+            for row in range(2, sheet.max_row+1):
+                emails.append(sheet.cell(row=row, column=1).value)
+                last_names.append(sheet.cell(row=row, column=2).value)
+                first_names.append(sheet.cell(row=row, column=3).value)
 
-        for email in emails:
-            if email:
-                user_exist = DefaultUser.objects.filter(email=email)
+        for u in range(len(emails)):
+            if emails[u]:
+                user_exist = DefaultUser.objects.filter(email=emails[u])
                 if user_exist:
                     try:
-                        user_exist.update(email=email,
+                        user_exist.update(email=emails[u],
                                           role=self.role,
                                           group=self.group,
                                           )
                     except Exception as e:
-                        print("user ", email, " not updated")
+                        print("user ", emails[u], " not updated")
                         print(e)
                 else:
                     try:
-                        username = email.split("@")[0]
+                        username = emails[u].split("@")[0]
                         password = uuid.uuid4().hex[:8]
 
-                        user = DefaultUser.objects.create_user(email=email,
+                        user = DefaultUser.objects.create_user(email=emails[u],
                                                                password=password,
                                                                role=self.role,
                                                                group=self.group,
-                                                               username=email.split("@")[0]
+                                                               username=emails[u].split("@")[0]
                                                                )
                         try:
-                            send_password(email, username, password)
+                            send_password(emails[u], username, password)
                         except Exception as e:
-                            print(e)
+                            print('faild to send email',e)
 
                     except Exception as e:
-                        print("user ", email, "not created")
+                        print("user ", emails[u], "not created")
                         print(e)
 
     def __str__(self):
