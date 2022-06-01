@@ -5,7 +5,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.conf import settings
-from .models import Pod, App, DefaultUser
+from .models import Pod, App, DefaultUser, AccessGroup
 import hashlib
 from .custom_functions import autotask
 from kubernetes import client, config
@@ -161,14 +161,26 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
         print("error while deploying: ", e)
 
 
-def start_pod(request, app_name):
+def start_pod(request, app_name, user_id=None):
     if request.user.is_authenticated:
         try:
-            pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
-        except Pod.DoesNotExist:
-            return redirect("main:homepage")
+            user_id = int(user_id)
+        except:
+            user_id = None
 
-        app = App.objects.get(name=app_name)
+        if user_id:
+            try:
+                user = DefaultUser.objects.get(id=user_id)
+            except DefaultUser.DoesNotExist:
+                return redirect(request.META['HTTP_REFERER'])
+        else:
+            user = request.user
+
+        try:
+            pod = Pod.objects.get(pod_user=user, app_name=app_name)
+            app = App.objects.get(name=app_name)
+        except (App.DoesNotExist, Pod.DoesNotExist):
+            return redirect(request.META['HTTP_REFERER'])
 
         deploy_app(pod_name=pod.pod_name,
                    app_name=app_name.lower(),
@@ -178,18 +190,28 @@ def start_pod(request, app_name):
 
         create_service(pod_name=pod.pod_name, app_name=app_name.lower())
 
-        if request.user.role != DefaultUser.STUDENT:
-            return redirect('main:test_apps')
-
-    return redirect("main:homepage")
+    return redirect(request.META['HTTP_REFERER'])
 
 
-def stop_pod(request, app_name):
+def stop_pod(request, app_name, user_id=None):
     if request.user.is_authenticated:
         try:
-            pod = Pod.objects.get(pod_user=request.user, app_name=app_name)
+            user_id = int(user_id)
+        except:
+            user_id = None
+
+        if user_id:
+            try:
+                user = DefaultUser.objects.get(id=user_id)
+            except DefaultUser.DoesNotExist:
+                return redirect(request.META['HTTP_REFERER'])
+        else:
+            user = request.user
+
+        try:
+            pod = Pod.objects.get(pod_user=user, app_name=app_name)
         except Pod.DoesNotExist:
-            return redirect("main:homepage")
+            return redirect(request.META['HTTP_REFERER'])
 
         pod_name = pod.pod_name
 
@@ -214,10 +236,7 @@ def stop_pod(request, app_name):
         except ApiException as a:
             print("delete deployment exception", a)
 
-        if request.user.role != DefaultUser.STUDENT:
-            return redirect('main:test_apps')
-
-    return redirect("main:homepage")
+    return redirect(request.META['HTTP_REFERER'])
 
 
 def display_apps(apps, user):
@@ -283,7 +302,7 @@ def display_apps(apps, user):
         except Exception as e:
             print("#DEBUG:deployment status error handling")
             print(e)
-        data[app] = dict(
+        data[app.name] = dict(
             {"vnc_pass": vnc_pass, "deployment_status": status, "ip": ip, "port": port})
 
     return data
@@ -302,7 +321,7 @@ def test_apps(request):
 def homepage(request):
     data = dict()
     if request.user.is_authenticated:
-        if request.user.is_superuser:
+        if request.user.is_superuser or request.user.role == DefaultUser.ADMIN:
             return render(request, 'main/admin.html')
 
         elif request.user.role == DefaultUser.TEACHER:
@@ -343,3 +362,51 @@ def login_request(request):
     form = AuthenticationForm
 
     return render(request, "main/login.html", {"form": form})
+
+
+def list_students(request, group_id=None):
+    if request.user.is_authenticated:
+        user = request.user
+        if user.role == DefaultUser.TEACHER:
+            teacher = user
+            groups = AccessGroup.objects.exclude(name__exact=AccessGroup.FULL)
+            apps_to_template= []
+            data = dict()
+            try:
+                group_id = int(group_id)
+            except:
+                group_id = None
+                current_group = None
+
+            if group_id and group_id != AccessGroup.FULL:
+
+                try:
+                    group = AccessGroup.objects.get(id=group_id)
+                    students = group.students.filter(role__exact=DefaultUser.STUDENT)
+                    apps = group.apps.all()
+                    current_group = group
+
+                except AccessGroup.DoesNotExist:
+                    students = None
+                    apps = None
+
+                if apps:
+                    for app in apps:
+
+                        data[app.name] = []
+                        apps_to_template.append(app.name)
+                        for student in students:
+
+                            data[app.name].append({'info': student,
+                                            **display_apps([app], student)[app.name]})
+                            print(data)
+
+            return render(request, 'main/list_students.html', {'data': data,
+                                                               'groups': groups,
+                                                               'apps': apps_to_template,
+                                                               'current_group': current_group})
+
+    return render(request, 'main/main.html')
+
+
+
