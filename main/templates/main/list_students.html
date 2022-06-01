@@ -1,0 +1,106 @@
+{% extends "main/skeleten.html" %}
+{%block content%}
+<br>
+<div class="ui container">
+    {%if not request.user.is_authenticated%}
+    <h2 class="ui center aligned red icon header">
+      <i class="settings icon"></i>
+      <div class="content">
+        YOU ARE NOT CONNECTED
+        <div class="sub header">Please connect first to access your machines.</div>
+      </div>
+    </h2>
+    {% else %}
+    <div class="ui message">
+      <div class="header">
+        Hi, {{user.username}}, Welcome to your Dashboard
+      </div>
+      <ul class="list">
+        <li>Monitor your students here</li>
+      </ul>
+    </div>
+    <h2 class="center aligned ui icon header">
+      <i class="universal access green large icon"></i>
+      <div class="content">
+        Browse Students
+        <div class="sub header">Display students by group</div>
+      </div>
+    </h2>
+    <div class="ui message">
+      <div class="header">
+        Select group to filter students:
+      </div>
+        <div class="ui segment">
+        {% for group in groups %}
+
+                <button onclick="location.href='{% url "main:list_students" group_id=group.id %}#{{ group.id }}'" class="ui primary button">
+                    {{ group.name }}
+                </button>
+
+        {% endfor %}
+        </div>
+        </div>
+        <h3 class="center aligned ui icon header" id="{{ current_group.id }}">
+            <i class="users green large icon"></i>
+            <div class="content">
+            {{ current_group.name }}
+            </div>
+        </h3>
+        {% if apps %}
+            <div class="ui segment">
+            {% for app in apps %}
+                <button onclick="location.href='#{{ app }}'" class="ui  primary button">
+                    {{ app }}
+                </button>
+            {% endfor %}
+            </div>
+        {% endif %}
+        {% for application, values in data.items %}
+        <table class="ui celled striped table" id="{{ application }}">
+            <thead>
+                <tr>
+                    <th class="center aligned" colspan="3">
+                        {{ application }}
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for student in values %}
+                <tr>
+                    <td class="center aligned collapsing">
+                        {{ student.info.last_name }} {{ student.info.first_name }}
+                    </td>
+                {% if student.deployment_status %}
+
+
+                <td class="right aligned collapsing">
+                    <h6 class="ui center aligned green icon header"><i class="power off large icon"></i><div class="content">Machine ON</div></h6>
+                </td>
+
+                <td class="right aligned collapsing">
+                    <a  href="{% url "main:stop_pod" app_name=application user_id=student.info.id %}"><h6 class="ui center aligned orange icon header"><i class="pause large icon"></i><div class="content">Stop Machine</div></h6></a>
+
+                    <a target="_blank" href="http://{{ student.ip }}:{{student.port}}/vnc.html?password={{student.vnc_pass}}&path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true"><h6 class="ui center aligned blue icon header"><i class="desktop large icon"></i><div class="content">Direct connect</div></h6></a>
+                </td>
+                </tr>
+                <tr>
+
+                </tr>
+            {% else %}
+                <td class="left aligned collapsing">
+                    <h6 class="ui center aligned red icon header"><i class="power off large icon"></i><div class="content">Machine OFF</div></h6>
+                </td>
+                <td class="right aligned collapsing">
+                    <a href="{% url "main:start_pod" app_name=application  user_id=student.info.id %}"><h6 class="ui center aligned blue icon header"><i class="play large icon"></i><div class="content">Start Machine</div></h6></a>
+                </td>
+                </tr>
+            {% endif %}
+
+                {% endfor %}
+            </tbody>
+                </table>
+    {% endfor %}
+    {% endif %}
+</div>
+
+{% endblock %}
