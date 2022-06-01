@@ -17,7 +17,10 @@ from .custom_functions import autotask
 
 @autotask
 def send_password(email_to, username, password):
+    return 0
+    # TODO
     subject = 'EasyTP by KuberLeads'
+
     message = render_to_string("main/send_password.html", {'username': username, 'password': password})
     send_mail(subject=subject, message=message, from_email=settings.EMAIL_HOST_USER, recipient_list=[email_to],
               fail_silently=False)
@@ -47,6 +50,9 @@ class AccessGroup(models.Model):
         if self.name == self.FULL:
             return "All Apps"
         return ", ".join([app.name for app in self.apps.all()])
+
+    def get_apps(self):
+        return [app.name for app in self.apps.all()]
 
 
 class App(models.Model):
@@ -81,16 +87,16 @@ class DefaultUser(AbstractUser):
     ]
     role = models.CharField(max_length=1, choices=ROLES, default=ADMIN, blank=False)
 
-    group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT, default=None, null=True)
+    group = models.ForeignKey(AccessGroup, on_delete=models.SET_DEFAULT,
+                              default=None, null=True, related_name='students')
 
     def save(self, *args, **kwargs):
         self.username = self.email.split('@esi.dz')[0]
 
         if self.role == self.ADMIN or self.is_superuser:
             self.is_staff = True
+            # add superusers,staff to FULL ACCESS GROUP
 
-        # add superusers,staff and teachers to FULL ACCESS GROUP
-        if self.role != self.STUDENT:
             self.group = AccessGroup.objects.get_or_create(name=AccessGroup.FULL)[0]
 
         super().save(*args, **kwargs)
@@ -131,7 +137,7 @@ class UsersFromCSV(models.Model):
             sheet = openpyxl.load_workbook(self.file)
             sheet = sheet.active
 
-            for row in range(2, sheet.max_row+1):
+            for row in range(2, sheet.max_row + 1):
                 emails.append(sheet.cell(row=row, column=1).value)
                 last_names.append(sheet.cell(row=row, column=2).value)
                 first_names.append(sheet.cell(row=row, column=3).value)
@@ -144,6 +150,8 @@ class UsersFromCSV(models.Model):
                         user_exist.update(email=emails[u],
                                           role=self.role,
                                           group=self.group,
+                                          last_name=last_names[u],
+                                          first_name=first_names[u]
                                           )
                     except Exception as e:
                         print("user ", emails[u], " not updated")
@@ -157,12 +165,14 @@ class UsersFromCSV(models.Model):
                                                                password=password,
                                                                role=self.role,
                                                                group=self.group,
-                                                               username=emails[u].split("@")[0]
+                                                               username=emails[u].split("@")[0],
+                                                               last_name=last_names[u],
+                                                               first_name=first_names[u]
                                                                )
                         try:
                             send_password(emails[u], username, password)
                         except Exception as e:
-                            print('faild to send email',e)
+                            print('faild to send email', e)
 
                     except Exception as e:
                         print("user ", emails[u], "not created")
@@ -197,7 +207,7 @@ def generate_pods(sender, instance, created, **kwargs):
             pod = Pod(pod_user=instance,
                       app_name=app_name,
                       pod_name=hashlib.md5(
-                                   f'{app_name}:{instance.username}:{instance.id}'.encode("utf-8")).hexdigest(),
+                          f'{app_name}:{instance.username}:{instance.id}'.encode("utf-8")).hexdigest(),
                       pod_vnc_user=uuid.uuid4().hex[:6],
                       pod_vnc_password=uuid.uuid4().hex,
                       pod_namespace="apps"
