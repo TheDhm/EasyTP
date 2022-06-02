@@ -1,0 +1,99 @@
+{% extends "main/skeleten.html" %}
+{% block content %}
+    <div class="ui container">
+    {%if not request.user.is_authenticated%}
+    <h2 class="ui center aligned red icon header">
+      <i class="settings icon"></i>
+      <div class="content">
+        YOU ARE NOT CONNECTED
+        <div class="sub header">Please connect first to access your machines.</div>
+      </div>
+    </h2>
+    {% else %}
+{#        <div class="ui message">#}
+{#            <div class="header">#}
+{#            Hi, {{user.username}}, Welcome to your file explorer#}
+{#            </div>#}
+{#        </div>#}
+
+    <h2 class="center aligned ui icon header">
+      <i class="folder open teal large icon"></i>
+      <div class="content">
+        file explorer
+        <div class="sub header">Manage your storage space here</div>
+      </div>
+    </h2>
+        <div class="ui segment">
+        {% if parent_path_encoded != '' %}
+            <h3><a href="{% url 'main:file_explorer' path=parent_path_encoded %}"><i class="level up alternate teal icon "></i></a>{{ current_path }}:</h3>
+        {% else %}
+            <h3><a href="{% url 'main:file_explorer' %}"><i class="level up alternate teal icon "></i></a>{{ current_path }}:</h3>
+        {% endif %}
+        <table class="ui celled striped table">
+        <thead>
+        <tr>
+            <th class="left aligned collapsing" colspan="2">
+                <form class="ui form" enctype="multipart/form-data" method="post">
+                    {% csrf_token %}
+                    <label>Upload file:</label>
+                    <div class="two fields">
+                        <div class="field">
+                            {{ form.file }}
+                        </div>
+                        <button class="ui button" type="submit" formmethod="post">Upload</button>
+                    </div>
+                    {% if form.errors %}
+                    <div class="ui error message">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <div class="header">error</div>
+                        {% endfor %}
+                    {% endfor %}
+                    </div>
+                    {% endif %}
+                </form>
+            </th>
+            </tr>
+{#            <th>#}
+{#                <a class="content" href="{% url 'main:file_explorer' path=values.path %}">#}
+{#                        <i class="upload teal icon "></i>upload here#}
+{#                    </a>#}
+{#            </th>#}
+        </thead>
+
+        <tbody>
+        <div class="ui big list">
+        {% for file, values in data.items %}
+             <tr>
+                {% if values.is_dir %}
+
+                        <td class="left aligned collapsing" colspan="2">
+                            <a class="content" href="{% url 'main:file_explorer' path=values.path %}">
+                                <i class="folder teal icon "></i>{{ file }}
+                            </a>
+                        </td>
+
+
+                {% else %}
+                    <td class="left aligned collapsing">
+                        <div class="item">
+                            <i class="file teal icon"></i>{{ file }}
+                        </div>
+                    </td>
+                    <td class="center aligned collapsing three wide">
+                        <a class="content" href="{% url 'main:download_file' path=values.path %}">
+                                <i class="download teal icon "></i>
+                        </a>
+                    </td>
+                {% endif %}
+            </tr>
+
+        {% endfor %}
+        </div>
+        </tbody>
+        </table>
+        </div>
+        </div>
+    {% endif %}
+    </div>
+{% endblock %}
