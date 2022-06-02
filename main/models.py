@@ -213,3 +213,13 @@ def generate_pods(sender, instance, created, **kwargs):
                       pod_namespace="apps"
                       )
             pod.save()
+
+
+class Instances(models.Model):
+    pod = models.OneToOneField(Pod, on_delete=models.CASCADE, default=None, related_name="instance")
+    instance_name = models.CharField(max_length=200, default=None, blank=False, null=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_modified = models.DateTimeField(auto_now=True, blank=True)
+
+    def __str__(self):
+        return f'{self.pod}:{self.instance_name}'
