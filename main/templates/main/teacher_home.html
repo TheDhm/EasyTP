@@ -22,7 +22,7 @@
             <div class="sub header">Manage your Students here</div>
         </div>
     </h2>
-        <table class="ui celled striped table">
+        <table class="ui celled striped fixed table">
             <thead>
                 <tr>
                     <th class="center aligned" colspan="3">
@@ -33,7 +33,7 @@
             <tbody>
                <tr>
                 <td class="right aligned collapsing">
-                    <a href="#"><h6 class="ui center aligned orange icon header"><i class="upload large icon"></i><div class="content">Share Files</div></h6></a>
+                    <a href="{% url 'main:file_explorer' %}"><h6 class="ui center aligned orange icon header"><i class="upload large icon"></i><div class="content">Share Files</div></h6></a>
                 </td>
                 <td class="right aligned collapsing">
                     <a href="{% url 'main:list_students' %}"><h6 class="ui center aligned blue icon header"><i class="users large icon"></i><div class="content">Student's machines</div></h6></a>
