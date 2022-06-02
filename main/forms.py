@@ -2,6 +2,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django import forms
 from .models import DefaultUser, AccessGroup, App, UsersFromCSV
 from django.core.validators import FileExtensionValidator
+from .custom_validators import validate_file_size
 
 
 class UsersFromCSVForm(forms.ModelForm):
@@ -102,3 +103,7 @@ class CustomAddAccessGroup(forms.ModelForm):
     class Meta:
         model = AccessGroup
         fields = "__all__"
+
+
+class UploadFileForm(forms.Form):
+    file = forms.FileField(max_length=1000, validators=[validate_file_size], label="Upload file here")
