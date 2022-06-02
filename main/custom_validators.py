@@ -56,3 +56,8 @@ def validate_emails_in_file(file):
         ])
 
 
+def validate_file_size(file):
+    filesize = file.size
+
+    if filesize > 10485760:
+        raise ValidationError("The maximum file size that can be uploaded is 10MB")
