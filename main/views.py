@@ -5,12 +5,16 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
 from django.conf import settings
-from .models import Pod, App, DefaultUser, AccessGroup
+from .models import Pod, App, DefaultUser, AccessGroup, Instances
 import hashlib
 from .custom_functions import autotask
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from kubernetes.config import ConfigException
+import os
+import base64
+from .forms import UploadFileForm
+import mimetypes
 
 app_name = "main"
 
@@ -123,7 +127,8 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
                                 {
                                     "name": "nfs-kube",
                                     "mountPath": "/data/myData",
-                                    "subPath": app_name + "/" + pod_name
+                                    # "subPath": app_name + "/" + pod_name
+                                    "subPath": user_hostname
                                 },
                                 {
                                     "name": "nfs-kube-readonly",
@@ -139,7 +144,7 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
                             "nfs":
                                 {
                                     "server": "192.168.0.196",
-                                    "path": "/mnt/nfs_share"
+                                    "path": "/mnt/nfs_share/userdata"
                                 }
                         },
                         {
@@ -186,9 +191,11 @@ def start_pod(request, app_name, user_id=None):
                    app_name=app_name.lower(),
                    image=app.image,
                    vnc_password=hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest(),
-                   user_hostname=request.user.username)
+                   user_hostname=user.username)
 
         create_service(pod_name=pod.pod_name, app_name=app_name.lower())
+
+        new_instance = Instances.objects.get_or_create(pod=pod, instance_name=pod.pod_name)
 
     return redirect(request.META['HTTP_REFERER'])
 
@@ -235,6 +242,13 @@ def stop_pod(request, app_name, user_id=None):
                                                                             name=app_name + "-deployment-" + pod_name)
         except ApiException as a:
             print("delete deployment exception", a)
+
+        try:
+            instance = Instances.objects.get(pod=pod, instance_name=pod_name)
+            instance.delete()
+
+        except Instances.DoesNotExist as e:
+            print("instance already deleted", e)
 
     return redirect(request.META['HTTP_REFERER'])
 
@@ -315,6 +329,11 @@ def test_apps(request):
             apps = App.objects.all()
             data = display_apps(apps, request.user)
 
+        else:
+            user = request.user
+            apps = user.group.apps.all()
+            data = display_apps(apps, user)
+
     return render(request, 'main/main.html', {"data": data})
 
 
@@ -327,14 +346,10 @@ def homepage(request):
         elif request.user.role == DefaultUser.TEACHER:
             return render(request, 'main/teacher_home.html')
 
-        user = request.user
-        apps = user.group.apps.all()
+        elif request.user.role == DefaultUser.STUDENT:
+            return render(request, 'main/student_home.html')
 
-        data = display_apps(apps, user)
-
-    return render(request,
-                  "main/main.html",
-                  {"data": data})
+    return render(request, 'main/main.html')
 
 
 def logout_request(request):
@@ -364,19 +379,22 @@ def login_request(request):
     return render(request, "main/login.html", {"form": form})
 
 
-def list_students(request, group_id=None):
+def list_students(request, group_id=None, app_id=None):
     if request.user.is_authenticated:
         user = request.user
         if user.role == DefaultUser.TEACHER:
             teacher = user
             groups = AccessGroup.objects.exclude(name__exact=AccessGroup.FULL)
-            apps_to_template= []
+            apps_to_template = []
+            current_group = None
+            current_app = None
+
             data = dict()
+
             try:
                 group_id = int(group_id)
             except:
                 group_id = None
-                current_group = None
 
             if group_id and group_id != AccessGroup.FULL:
 
@@ -390,23 +408,151 @@ def list_students(request, group_id=None):
                     students = None
                     apps = None
 
-                if apps:
-                    for app in apps:
+                apps_to_template = apps
 
+                try:
+                    app_id = int(app_id)
+                except:
+                    app_id = None
+
+                if app_id:
+                    try:
+                        app = App.objects.get(id=app_id)
+                    except App.DoesNotExist:
+                        app = None
+
+                    if app:
                         data[app.name] = []
-                        apps_to_template.append(app.name)
+                        current_app = app
                         for student in students:
+                            instance = None
+                            deployment_status = False
+                            try:
+                                pod = Pod.objects.get(pod_user=student, app_name=app.name)
+                            except Pod.DoesNotExist:
+                                pod = None
+                            #
+                            # if pod:
+                            #     try:
+                            #         instance = Instances.objects.get(pod=pod, instance_name=pod.pod_name)
+                            #     except Instances.DoesNotExist:
+                            #         instance = None
+                            # if pod and instance:
+                            #     deployment_status = True
 
                             data[app.name].append({'info': student,
-                                            **display_apps([app], student)[app.name]})
-                            print(data)
+                                                   **display_apps([app], student)[app.name]})
 
             return render(request, 'main/list_students.html', {'data': data,
                                                                'groups': groups,
                                                                'apps': apps_to_template,
-                                                               'current_group': current_group})
+                                                               'current_group': current_group,
+                                                               'current_app': current_app})
 
     return render(request, 'main/main.html')
 
 
+# def direct_connect(request, app=None, user_id=None):
+#     if request.user.is_authenticated:
+#         if request.user.role == DefaultUser.TEACHER:
+#             if app and user_id:
 
+
+def get_sub_files(root_path, path):
+    subfiles = {}
+
+    directory = os.path.join(root_path, path)
+    try:
+        files_list = os.listdir(directory)
+    except FileNotFoundError:
+        os.mkdir(directory)
+        files_list = os.listdir(directory)
+
+    files_list.sort()
+
+    for file in files_list:
+        path = os.path.join(directory, file)
+        subfiles[file] = {'is_dir': os.path.isdir(path),
+                          'path': base64.urlsafe_b64encode(bytes(path.split(root_path)[1], encoding='utf8')).decode()}
+
+    return subfiles
+
+
+@autotask
+def save_file(path, file):
+    with open(os.path.join(path, file.name), 'wb+') as destination:
+        for chunk in file.chunks():
+            destination.write(chunk)
+
+
+def file_explorer(request, path=None):
+    if request.user.is_authenticated:
+        if request.user.role != DefaultUser.STUDENT:  # if not student => teacher or admin
+            # open read only folder:
+
+            # _readonly
+            # |__LOGISIM
+            # |  |__ tp files
+            # |__GNS3
+            #    |__ tp files
+
+            user_path = '/home/masterzulu/folder/'
+
+        else:  # user is student
+
+            user_path = '/mnt/nfs_share/userdata/' + request.user.username + '/'
+
+        if path:
+            path = base64.urlsafe_b64decode(path).decode()
+            path = path.split('..')[0]  # Critical : escape /../
+
+            current_path = 'myspace/' + path
+            parent = '/'.join(path.split('/')[:-2])
+            parent_path_encoded = base64.urlsafe_b64encode(bytes(parent, encoding='utf8')).decode()
+
+        else:
+            current_path = 'myspace/'
+            path = ''
+            parent_path_encoded = ''
+
+        sub_files = get_sub_files(user_path, path)
+
+        if request.method == 'POST':
+            form = UploadFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                file = request.FILES['file']
+
+                save_to = os.path.join(user_path, path)
+                save_file(save_to, file)
+
+        else:
+            form = UploadFileForm()
+
+        return render(request, 'main/file_explorer.html', {'data': sub_files,
+                                                           'current_path': current_path,
+                                                           'parent_path_encoded': parent_path_encoded,
+                                                           'form': form})
+
+
+def download_file(request, path):
+    if request.user.is_authenticated:
+        user = request.user
+
+        path = base64.urlsafe_b64decode(path).decode()
+        path = path.split('..')[0]  # Critical : escape /../
+        file_name = path.split('/')[-1]
+
+        if user.role == DefaultUser.STUDENT:
+            user_space = os.path.join('/mnt/nfs_share/userdata/', user.username)
+
+        else:
+            user_space = os.path.join('/home/masterzulu/folder/', )
+
+        full_path = os.path.join(user_space, path)
+        mime_type, _ = mimetypes.guess_type(full_path)
+
+        file = open(full_path, 'rb')
+        response = HttpResponse(file, content_type=mime_type)
+        response['Content-Disposition'] = "attachment; filename=%s" % file_name
+
+        return response
