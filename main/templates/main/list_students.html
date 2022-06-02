@@ -32,26 +32,45 @@
       </div>
         <div class="ui segment">
         {% for group in groups %}
-
-                <button onclick="location.href='{% url "main:list_students" group_id=group.id %}#{{ group.id }}'" class="ui primary button">
+                {% if current_group == group %}
+                    <button onclick="location.href='{% url "main:list_students" group_id=group.id  %}#{{ group.id }}'" class="ui teal button">
                     {{ group.name }}
                 </button>
-
+                {% else %}
+                <button onclick="location.href='{% url "main:list_students" group_id=group.id  %}#{{ group.id }}'" class="ui primary button">
+                    {{ group.name }}
+                </button>
+                {% endif %}
         {% endfor %}
         </div>
         </div>
+        {% if current_group %}
         <h3 class="center aligned ui icon header" id="{{ current_group.id }}">
             <i class="users green large icon"></i>
             <div class="content">
             {{ current_group.name }}
             </div>
         </h3>
+            {% else %}
+            <h3 class="center aligned ui icon header" >
+                <i class="times circle outline green large icon"></i>
+                <div class="content">
+                No group selected
+                </div>
+            </h3>
+            {% endif %}
         {% if apps %}
             <div class="ui segment">
             {% for app in apps %}
-                <button onclick="location.href='#{{ app }}'" class="ui  primary button">
+                {% if current_app == app %}
+                    <button onclick="location.href='{% url "main:list_students" group_id=current_group.id app_id=app.id %}#{{ current_group.id }}'" class="ui teal button">
+                        {{ app }}
+                    </button>
+                {% else %}
+                <button onclick="location.href='{% url "main:list_students" group_id=current_group.id app_id=app.id %}#{{ current_group.id }}'" class="ui primary button">
                     {{ app }}
                 </button>
+                {% endif %}
             {% endfor %}
             </div>
         {% endif %}
@@ -59,7 +78,7 @@
         <table class="ui celled striped table" id="{{ application }}">
             <thead>
                 <tr>
-                    <th class="center aligned" colspan="3">
+                    <th class="center aligned" colspan="5">
                         {{ application }}
                     </th>
                 </tr>
@@ -67,35 +86,44 @@
             <tbody>
             {% for student in values %}
                 <tr>
-                    <td class="center aligned collapsing">
+                    <td class="center aligned collapsing two wide">
+                        {{ student.info.username }}
+                    </td>
+                    <td class="center aligned collapsing five wide">
                         {{ student.info.last_name }} {{ student.info.first_name }}
                     </td>
                 {% if student.deployment_status %}
+                    <td class="right aligned collapsing">
+                        <a target="_blank" href="http://{{ student.ip }}:{{student.port}}/vnc.html?password={{student.vnc_pass}}&path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true"><h6 class="ui center aligned blue icon header"><i class="desktop large icon"></i><div class="content">Direct connect</div></h6></a>
+                    </td>
 
+                    <td class="right aligned collapsing">
+                        <a  href="{% url "main:stop_pod" app_name=application user_id=student.info.id %}"><h6 class="ui center aligned orange icon header"><i class="pause large icon"></i><div class="content">Stop Machine</div></h6></a>
+                    </td>
 
-                <td class="right aligned collapsing">
-                    <h6 class="ui center aligned green icon header"><i class="power off large icon"></i><div class="content">Machine ON</div></h6>
-                </td>
+                    <td class="right aligned collapsing three wide">
+                        <h6 class="ui center aligned green icon header"><i class="power off large icon"></i><div class="content">Machine ON</div></h6>
+                    </td>
 
-                <td class="right aligned collapsing">
-                    <a  href="{% url "main:stop_pod" app_name=application user_id=student.info.id %}"><h6 class="ui center aligned orange icon header"><i class="pause large icon"></i><div class="content">Stop Machine</div></h6></a>
-
-                    <a target="_blank" href="http://{{ student.ip }}:{{student.port}}/vnc.html?password={{student.vnc_pass}}&path=vnc&autoconnect=true&resize=remote&reconnect=true&show_dot=true"><h6 class="ui center aligned blue icon header"><i class="desktop large icon"></i><div class="content">Direct connect</div></h6></a>
-                </td>
-                </tr>
-                <tr>
-
-                </tr>
             {% else %}
-                <td class="left aligned collapsing">
-                    <h6 class="ui center aligned red icon header"><i class="power off large icon"></i><div class="content">Machine OFF</div></h6>
+                <td class="right aligned collapsing" colspan="2">
+                    <a href="{% url "main:start_pod" app_name=application  user_id=student.info.id %}">
+                        <h6 class="ui center aligned blue icon header">
+                            <i class="play large icon"></i>
+                            <div class="content">Start Machine</div>
+                        </h6>
+                    </a>
                 </td>
-                <td class="right aligned collapsing">
-                    <a href="{% url "main:start_pod" app_name=application  user_id=student.info.id %}"><h6 class="ui center aligned blue icon header"><i class="play large icon"></i><div class="content">Start Machine</div></h6></a>
-                </td>
-                </tr>
-            {% endif %}
 
+                    <td class="left aligned collapsing three wide" >
+                    <h6 class="ui center aligned red icon header">
+                        <i class="power off large icon"></i>
+                        <div class="content">Machine OFF</div>
+                    </h6>
+                </td>
+
+            {% endif %}
+                </tr>
                 {% endfor %}
             </tbody>
                 </table>
