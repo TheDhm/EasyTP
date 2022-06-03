@@ -22,6 +22,7 @@ class CustomUserAdmin(UserAdmin):
         (None, {'fields': ('username', 'password')}),
         (_('ROLE info'), {'fields': ('role', 'group')}),
         (_('Personal info'), {'fields': ('email', 'first_name', 'last_name')}),
+        (_('Usage info'), {'fields': ('upload_limit',)}),
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'user_permissions'),
         }),
