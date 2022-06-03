@@ -68,13 +68,15 @@ def create_service(pod_name, app_name):
 
 
 @autotask
-def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **kwargs):
+def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, readonly=False, *args, **kwargs):
     try:
         config.load_kube_config()
     except ConfigException:
         config.load_incluster_config()
 
     apps_api = client.AppsV1Api()
+    user_space = user_hostname
+
     user_hostname = user_hostname.replace('_', '-')  # " _ " not allowed in kubernetes hostname
 
     deployment = {
@@ -103,6 +105,9 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
                 },
                 "spec": {
                     "hostname": user_hostname,
+                    # "securityContext": {
+                    #     "runAsUser": 1000
+                    # },
                     "containers": [
                         {
                             "name": app_name,
@@ -128,11 +133,12 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
                                     "name": "nfs-kube",
                                     "mountPath": "/data/myData",
                                     # "subPath": app_name + "/" + pod_name
-                                    "subPath": user_hostname
+                                    "subPath": user_space
                                 },
                                 {
                                     "name": "nfs-kube-readonly",
                                     "mountPath": "/data/readonly",
+                                    "readOnly": readonly,
                                 }
                             ]
 
@@ -144,7 +150,7 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, *args, **
                             "nfs":
                                 {
                                     "server": "192.168.0.196",
-                                    "path": "/mnt/nfs_share/userdata"
+                                    "path": "/mnt/nfs_share/USERDATA"
                                 }
                         },
                         {
@@ -173,13 +179,18 @@ def start_pod(request, app_name, user_id=None):
         except:
             user_id = None
 
-        if user_id:
-            try:
-                user = DefaultUser.objects.get(id=user_id)
-            except DefaultUser.DoesNotExist:
-                return redirect(request.META['HTTP_REFERER'])
+        readonly_volume = False
+        user = request.user
+
+        if request.user.role != DefaultUser.STUDENT:
+            if user_id:
+                try:
+                    user = DefaultUser.objects.get(id=user_id)
+                except DefaultUser.DoesNotExist:
+                    return redirect(request.META['HTTP_REFERER'])
         else:
-            user = request.user
+            readonly_volume = True
+
 
         try:
             pod = Pod.objects.get(pod_user=user, app_name=app_name)
@@ -191,7 +202,8 @@ def start_pod(request, app_name, user_id=None):
                    app_name=app_name.lower(),
                    image=app.image,
                    vnc_password=hashlib.md5(pod.pod_vnc_password.encode("utf-8")).hexdigest(),
-                   user_hostname=user.username)
+                   user_hostname=user.username,
+                   readonly=readonly_volume)
 
         create_service(pod_name=pod.pod_name, app_name=app_name.lower())
 
@@ -207,7 +219,7 @@ def stop_pod(request, app_name, user_id=None):
         except:
             user_id = None
 
-        if user_id:
+        if user_id and request.user.role != DefaultUser.STUDENT:
             try:
                 user = DefaultUser.objects.get(id=user_id)
             except DefaultUser.DoesNotExist:
@@ -496,11 +508,11 @@ def file_explorer(request, path=None):
             # |__GNS3
             #    |__ tp files
 
-            user_path = '/home/masterzulu/folder/'
+            user_path = '/mnt/nfs_share/readonly/'
 
         else:  # user is student
 
-            user_path = '/mnt/nfs_share/userdata/' + request.user.username + '/'
+            user_path = '/mnt/nfs_share/USERDATA/' + request.user.username + '/'
 
         if path:
             path = base64.urlsafe_b64decode(path).decode()
@@ -521,9 +533,14 @@ def file_explorer(request, path=None):
             form = UploadFileForm(request.POST, request.FILES)
             if form.is_valid():
                 file = request.FILES['file']
+                file_size = file.size / 1048576
 
-                save_to = os.path.join(user_path, path)
-                save_file(save_to, file)
+                if file_size + request.user.upload_limit <= 1024:
+
+                    save_to = os.path.join(user_path, path)
+                    save_file(save_to, file)
+                    request.user.upload_limit += file_size
+                    request.user.save()
 
         else:
             form = UploadFileForm()
@@ -543,10 +560,10 @@ def download_file(request, path):
         file_name = path.split('/')[-1]
 
         if user.role == DefaultUser.STUDENT:
-            user_space = os.path.join('/mnt/nfs_share/userdata/', user.username)
+            user_space = os.path.join('/mnt/nfs_share/USERDATA/', user.username)
 
         else:
-            user_space = os.path.join('/home/masterzulu/folder/', )
+            user_space = os.path.join('/mnt/nfs_share/readonly/', )
 
         full_path = os.path.join(user_space, path)
         mime_type, _ = mimetypes.guess_type(full_path)
