@@ -29,7 +29,7 @@ WORKDIR /logisim
 RUN wget https://iweb.dl.sourceforge.net/project/circuit/2.7.x/2.7.1/logisim-generic-2.7.1.jar
 
 
-COPY bin/easy-novnc /usr/local/bin/
+COPY --from=easy-novnc-build /bin/easy-novnc /usr/local/bin/
 COPY menu.xml /etc/xdg/openbox/
 COPY supervisord.conf /etc/
 EXPOSE 8080
