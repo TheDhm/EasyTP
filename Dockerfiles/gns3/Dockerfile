@@ -46,7 +46,11 @@ RUN apt update && \
 	usermod -aG ubridge app && \
 	usermod -aG kvm app && \
 	usermod -aG libvirt app && \
-	wget https://www.w7cloud.com/GNS3-IOS/c7200-jk9s-mz.124-13b.bin
+    wget https://www.w7cloud.com/GNS3-IOS/c7200-jk9s-mz.124-13b.bin
+
+WORKDIR /data
+
+RUN wget https://github.com/alperenp/GNS3/raw/master/VMimages/router/Cisco%20IOS/c7200-advipservicesk9-mz.152-4.S5.bin
 
 RUN mkdir /home/wallpaper && \
     mkdir /tmp/wallpaper
@@ -58,5 +62,9 @@ RUN cd /tmp/wallpaper && \
 VOLUME /data
 
 RUN mkdir -p /home/.vnc
+
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends dbus-x11 gnome-icon-theme thunar gedit && \
+    rm -rf /var/lib/apt/lists
 
 CMD ["sh", "-c", "chown app:app /data /dev/stdout && echo ${VNC_PW} | tigervncpasswd -f > /home/.vnc/passwd && exec gosu app supervisord"]
