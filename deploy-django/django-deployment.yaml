@@ -17,13 +17,16 @@ spec:
       labels:
         app: django
     spec:
+      securityContext:
+        runAsUser: 1000
       containers:
       - name: django
-#        image:  django-app:prod
-        image:  django-app:latest
+        image:  django-app:prod
+#        image:  django-app:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8000
+        - containerPort: 587
         env:
           - name: POSTGRES_USER
             valueFrom:
@@ -42,4 +45,25 @@ spec:
 
           - name: POSTGRES_PORT
             value: "5432"
+
+        volumeMounts:
+          - name: readonly-volume
+            mountPath: /READONLY
+
+          - name: userdata-volume
+            mountPath: /USERDATA
+
+      volumes:
+        - name: readonly-volume
+          nfs:
+#            server: 192.168.0.169
+            server: 192.168.0.196
+            path: "/mnt/nfs_share/READONLY"
+
+        - name: userdata-volume
+          nfs:
+#            server: 192.168.0.169
+            server: 192.168.0.196
+            path: "/mnt/nfs_share/USERDATA"
+
       serviceAccountName: django-account
