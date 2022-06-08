@@ -17,8 +17,6 @@ from .custom_functions import autotask
 
 @autotask
 def send_password(email_to, username, password):
-    return 0
-    # TODO
     subject = 'EasyTP by KuberLeads'
 
     message = render_to_string("main/send_password.html", {'username': username, 'password': password})
