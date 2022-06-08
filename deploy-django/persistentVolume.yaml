@@ -8,7 +8,7 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    server: 198.168.0.196
+    server: 192.168.0.196
     path: /mnt/nfs_share
   persistentVolumeReclaimPolicy: Retain
   claimRef:
