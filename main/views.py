@@ -158,7 +158,7 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, readonly=
                             "nfs":
                                 {
                                     "server": "192.168.0.196",
-                                    "path": "/mnt/nfs_share/readonly"
+                                    "path": "/mnt/nfs_share/READONLY"
                                 }
                         }
                     ]
@@ -283,7 +283,7 @@ def display_apps(apps, user):
 
         else:  # create pod if not exist --> case where admin add new apps after user created
             pod_name = hashlib.md5(
-                f'{app_name}:{user.username}:{user.id}'.encode("utf-8")).hexdigest()
+                f'{app.name}:{user.username}:{user.id}'.encode("utf-8")).hexdigest()
             pod_vnc_user = uuid.uuid4().hex[:6]
             pod_vnc_password = uuid.uuid4().hex
             generate_pod_if_not_exist(pod_user=user,
@@ -310,14 +310,17 @@ def display_apps(apps, user):
             deployment = apps_instance.list_namespaced_deployment(namespace="apps",
                                                                   label_selector="deploymentApp={}".format(
                                                                       pod_name))
+            pod = api_instance.list_namespaced_pod(namespace="apps",
+                                                   label_selector="appDep={}".format(pod_name))
 
             if len(service.items) != 0:
                 if len(deployment.items) != 0:
                     if deployment.items[0].status.ready_replicas:
                         status = True
-                        # port = service.items[0].spec.ports[0].node_port
-                        port = service.items[0].spec.ports[0].port
-                        ip = service.items[0].spec.cluster_ip
+                        port = service.items[0].spec.ports[0].node_port
+                        # port = service.items[0].spec.ports[0].port
+                        ip = pod.items[0].status.host_ip
+                        # ip = service.items[0].spec.cluster_ip
                     else:
                         print("no replicas ready")
                 else:
@@ -346,7 +349,7 @@ def test_apps(request):
             apps = user.group.apps.all()
             data = display_apps(apps, user)
 
-    return render(request, 'main/main.html', {"data": data})
+    return render(request, 'main/display_apps.html', {"data": data})
 
 
 def homepage(request):
@@ -361,7 +364,7 @@ def homepage(request):
         elif request.user.role == DefaultUser.STUDENT:
             return render(request, 'main/student_home.html')
 
-    return render(request, 'main/main.html')
+    return render(request, 'main/display_apps.html')
 
 
 def logout_request(request):
@@ -461,7 +464,7 @@ def list_students(request, group_id=None, app_id=None):
                                                                'current_group': current_group,
                                                                'current_app': current_app})
 
-    return render(request, 'main/main.html')
+    return render(request, 'main/display_apps.html')
 
 
 # def direct_connect(request, app=None, user_id=None):
@@ -508,11 +511,13 @@ def file_explorer(request, path=None):
             # |__GNS3
             #    |__ tp files
 
-            user_path = '/mnt/nfs_share/readonly/'
+            # user_path = '/mnt/nfs_share/readonly/'
+            user_path = '/READONLY/'
 
         else:  # user is student
 
-            user_path = '/mnt/nfs_share/USERDATA/' + request.user.username + '/'
+            # user_path = '/mnt/nfs_share/USERDATA/' + request.user.username + '/'
+            user_path = '/USERDATA/' + request.user.username + '/'
 
         if path:
             path = base64.urlsafe_b64decode(path).decode()
@@ -560,10 +565,12 @@ def download_file(request, path):
         file_name = path.split('/')[-1]
 
         if user.role == DefaultUser.STUDENT:
-            user_space = os.path.join('/mnt/nfs_share/USERDATA/', user.username)
+            # user_space = os.path.join('/mnt/nfs_share/USERDATA/', user.username)
+            user_space = os.path.join('/USERDATA/', user.username)
 
         else:
-            user_space = os.path.join('/mnt/nfs_share/readonly/', )
+            # user_space = os.path.join('/mnt/nfs_share/readonly/', )
+            user_space = os.path.join('/READONLY/', )
 
         full_path = os.path.join(user_space, path)
         mime_type, _ = mimetypes.guess_type(full_path)
