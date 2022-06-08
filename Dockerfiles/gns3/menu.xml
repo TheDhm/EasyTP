@@ -16,5 +16,10 @@
                 <execute>/usr/bin/wireshark</execute>
             </action>
         </item>
+        <item label="File Manager">
+            <action name="Execute">
+                <execute>/usr/bin/thunar</execute>
+            </action>
+        </item>
     </menu>
 </openbox_menu>
