@@ -61,7 +61,12 @@ git clone https://github.com/TheDhm/container-manager-app.git
 3. Create NFS storage (you can follow this [tutorial](https://www.tecmint.com/install-nfs-server-on-ubuntu/))
     * create DB folder in your nfs server (for postgres DB)
     * create USERDATA folder ( users storage space )
-    * make sure to change server IP in: views, persistent Volumes
+    * create READONLY folder
+    * make sure to change nfs server IP in: 
+      * postgres-pv.yaml
+      * django-deployment.yaml
+      * persistentVolume.yaml
+
 
 4. Build the web app image
 ```sh
