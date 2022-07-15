@@ -23,7 +23,12 @@ RUN pip install gunicorn
 COPY ./Docker2CS ./Docker2CS
 COPY ./main ./main
 COPY ./manage.py .
+COPY ./entrypoint.sh .
 
+RUN chmod 777 ./entrypoint.sh
+
+RUN mkdir static
+RUN chmod -R 777 static
 
 RUN mkdir /READONLY
 RUN mkdir /USERDATA
@@ -32,4 +37,5 @@ EXPOSE 8000
 EXPOSE 587
 
 #CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:8000"]
-CMD ["gunicorn", "--bind", ":8000", "--workers", "3", "Docker2CS.wsgi"]
+
+ENTRYPOINT ./entrypoint.sh
