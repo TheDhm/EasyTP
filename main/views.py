@@ -19,6 +19,10 @@ import mimetypes
 app_name = "main"
 
 
+NFS_SERVER = os.getenv('NFS_SERVER')
+NFS_PATH = os.getenv('NFS_PATH')
+
+
 @autotask
 def generate_pod_if_not_exist(pod_user, app_name, pod_name, pod_vnc_user, pod_vnc_password):
     pod = Pod(pod_user=pod_user,
@@ -132,7 +136,6 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, readonly=
                                 {
                                     "name": "nfs-kube",
                                     "mountPath": "/data/myData",
-                                    # "subPath": app_name + "/" + pod_name
                                     "subPath": user_space
                                 },
                                 {
@@ -149,16 +152,16 @@ def deploy_app(pod_name, app_name, image, vnc_password, user_hostname, readonly=
                             "name": "nfs-kube",
                             "nfs":
                                 {
-                                    "server": "192.168.0.196",
-                                    "path": "/mnt/nfs_share/USERDATA"
+                                    "server": NFS_SERVER,
+                                    "path": NFS_PATH + "USERDATA"
                                 }
                         },
                         {
                             "name": "nfs-kube-readonly",
                             "nfs":
                                 {
-                                    "server": "192.168.0.196",
-                                    "path": "/mnt/nfs_share/READONLY"
+                                    "server": NFS_SERVER,
+                                    "path": NFS_PATH + "READONLY"
                                 }
                         }
                     ]
@@ -353,7 +356,6 @@ def test_apps(request):
 
 
 def homepage(request):
-    data = dict()
     if request.user.is_authenticated:
         if request.user.is_superuser or request.user.role == DefaultUser.ADMIN:
             return render(request, 'main/admin.html')
