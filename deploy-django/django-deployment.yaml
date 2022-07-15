@@ -21,8 +21,7 @@ spec:
         runAsUser: 1000
       containers:
       - name: django
-        image:  django-app:prod
-#        image:  django-app:latest
+        image:  django-app:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 8000
@@ -46,6 +45,13 @@ spec:
           - name: POSTGRES_PORT
             value: "5432"
 
+          - name: NFS_SERVER
+            value: "192.168.193.132"
+
+          - name: NFS_PATH
+            value: "/mnt/nfs_share/"
+
+
         volumeMounts:
           - name: readonly-volume
             mountPath: /READONLY
@@ -56,14 +62,12 @@ spec:
       volumes:
         - name: readonly-volume
           nfs:
-#            server: 192.168.0.169
-            server: 192.168.0.196
+            server: 192.168.193.132
             path: "/mnt/nfs_share/READONLY"
 
         - name: userdata-volume
           nfs:
-#            server: 192.168.0.169
-            server: 192.168.0.196
+            server: 192.168.193.132
             path: "/mnt/nfs_share/USERDATA"
 
       serviceAccountName: django-account
