@@ -18,13 +18,12 @@ RUN source django/bin/activate
 
 RUN pip install -r requirements.txt
 RUN pip install gunicorn
-# copy project
-COPY . .
 
-## use option -v /var/run/docker.sock:/var/run/docker.sock
-#RUN echo "" >> /var/run/docker.sock
-#
-#RUN chmod 666 /var/run/docker.sock
+# copy project
+COPY ./Docker2CS ./Docker2CS
+COPY ./main ./main
+COPY ./manage.py .
+
 
 RUN mkdir /READONLY
 RUN mkdir /USERDATA
