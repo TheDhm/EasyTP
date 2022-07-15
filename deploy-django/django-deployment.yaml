@@ -46,7 +46,7 @@ spec:
             value: "5432"
 
           - name: NFS_SERVER
-            value: "192.168.193.132"
+            value: "192.168.0.196"
 
           - name: NFS_PATH
             value: "/mnt/nfs_share/"
@@ -62,12 +62,12 @@ spec:
       volumes:
         - name: readonly-volume
           nfs:
-            server: 192.168.193.132
+            server: 192.168.0.196
             path: "/mnt/nfs_share/READONLY"
 
         - name: userdata-volume
           nfs:
-            server: 192.168.193.132
+            server: 192.168.0.196
             path: "/mnt/nfs_share/USERDATA"
 
       serviceAccountName: django-account
