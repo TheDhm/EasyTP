@@ -26,7 +26,7 @@ RUN mkdir -p /logisim
 
 WORKDIR /logisim
 
-RUN wget https://iweb.dl.sourceforge.net/project/circuit/2.7.x/2.7.1/logisim-generic-2.7.1.jar
+RUN wget https://sourceforge.net/projects/circuit/files/2.7.x/2.7.1/logisim-generic-2.7.1.jar
 
 
 COPY --from=easy-novnc-build /bin/easy-novnc /usr/local/bin/
