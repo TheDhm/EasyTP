@@ -74,22 +74,33 @@ cd container-manager-app
 docker build --rm -t django-app:latest .
 ```
 5. Before you start the project make sur to have these docker images locally :
-* [Gns3](https://hub.docker.com/r/younes46/gns)
-```sh 
-docker pull younes46/gns
-docker tag younes46/gns gns3
-```
-* [Logisim](https://hub.docker.com/repository/docker/anii76/logisim)
-```sh 
-docker pull anii76/logisim
-docker tag anii76/logisim logisim
-```
-### Or
+
+[//]: # (* [Gns3]&#40;https://hub.docker.com/r/younes46/gns&#41;)
+
+[//]: # (```sh )
+
+[//]: # (docker pull younes46/gns)
+
+[//]: # (docker tag younes46/gns gns3)
+
+[//]: # (```)
+
+[//]: # (* [Logisim]&#40;https://hub.docker.com/repository/docker/anii76/logisim&#41;)
+
+[//]: # (```sh )
+
+[//]: # (docker pull anii76/logisim)
+
+[//]: # (docker tag anii76/logisim logisim)
+
+[//]: # (```)
+
+[//]: # (### Or)
 Build the dockerfiles in `Dockerfiles`
 ```sh 
 docker build -t <ImageName> <DockerfilePath>
 ```
-6. Deploy everything XD
+6. Deploy on Kubernetes cluster
 ```sh
 cd container-manager-app
 sh deploy-all.sh
