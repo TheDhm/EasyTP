@@ -1,6 +1,8 @@
 # Container Manager App
 
 ## About 
+This project consists of modernizing (Containerization) of applications used by ESI students and implementation of a custom onsite Kubernetes cluster architecture to deploy and manage student access and activity.
+
 ## Built with
 * Django
 * Docker 
