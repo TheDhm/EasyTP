@@ -73,7 +73,7 @@ git clone https://github.com/TheDhm/container-manager-app.git
 cd container-manager-app
 docker build --rm -t django-app:latest .
 ```
-5. Before you start the project make sur to have these docker images locally :
+5. Before you start the project make sur you have docker images locally :
 
 [//]: # (* [Gns3]&#40;https://hub.docker.com/r/younes46/gns&#41;)
 
@@ -96,7 +96,7 @@ docker build --rm -t django-app:latest .
 [//]: # (```)
 
 [//]: # (### Or)
-Build the dockerfiles in `Dockerfiles`
+you can build the images using dockerfiles in `Dockerfiles` (Logisim & GNS3)
 ```sh 
 docker build -t <ImageName> <DockerfilePath>
 ```
