@@ -3,7 +3,7 @@
 >EasyTP is a web based solution that aims to facilitate and >customize cluster management by automating 
 >deployement for different Tools/software used in students labs allowing user >management ~~~ (microservices, fully distributed in LAN, NFS , >worker nodes ...)
 -->
-
+![GitHub contributors](https://img.shields.io/github/contributors/TheDhm/container-manager-app)  ![GitHub commit activity (branch)](https://img.shields.io/github/commit-activity/y/TheDhm/container-manager-app)  ![GitHub last commit](https://img.shields.io/github/last-commit/TheDhm/container-manager-app) ![GitHub language count](https://img.shields.io/github/languages/count/TheDhm/container-manager-app) ![GitHub top language](https://img.shields.io/github/languages/top/TheDhm/container-manager-app)
 ## About 
 
 The present project consisted of developing and deploying a solution that would allow
@@ -13,10 +13,10 @@ The proposed solution consists of containerizing two chosen applications (based 
 
 
 ## Built with
-* Docker 
-* Kubernetes 
-* Django
-* PostgreSQL
+* [![Django][Django]][django-url]
+* [![Docker][Docker]][docker-url]
+* [![Kubernetes][Kubernetes]][kubernetes-url]
+* [![PostG][PostG]][postg-url]
 
 
 <!--## Project motivation
@@ -29,7 +29,7 @@ This project is a semester long project for 2CS Computer Systems speciality (SIQ
 
 ## How did we dockerize them 
 
-To dockerize and remotely access GUI applications, the container contains the following stack described in ./Dockerfiles/\<appname>/Dockerfile.
+To dockerize and remotely access GUI applications, the container contains the following stack described in ``./Dockerfiles/\<appname>/Dockerfile``.
 
 <img src="./screenshots/stack.png" height="400">
  
@@ -256,6 +256,14 @@ kubectl -n django-space exec -it  <django pod> -- python manage.py createsuperus
 ## Acknowledgment
 Special thanks to M. BELHADI Zohir for helping us through this project.
 
+## Ressources
+The below space, a list of the most helpful resources that we would like to give credit to.
+* [Delivering Desktop Apps in Containers.](https://youtu.be/L4nqky8qGm8)
+* [How to create and run GUI application in a Docker container. ](https://www.digitalocean.com/community/tutorials/how-to-remotely-access-gui-applications-using-docker-and-caddy-on-debian-9)
+* [VNC vs RDP: which remote desktop tool is the best?](https://www.realvnc.com/en/blog/vnc-vs-rdp-which-remote-desktop-tool-is-best/#:~:text=Both%20protocols%20provide%20access%20to,what%20the%20remote%20user%20sees)
+* [Kubernetes tutorial](https://kubernetes.io/docs/tutorials/)
+* [FIX: Pod IP address is out of range specified in --pod-network-cidr ](https://serverfault.com/questions/1101838/kubernetes-pod-ip-address-is-out-of-range-specified-in-pod-network-cidr)
+
 ## Contact
 Contact KubeLeads Team:
 > - Anfal Bourouina : ka_bourouina@esi.dz
@@ -266,3 +274,16 @@ Contact KubeLeads Team:
 > - Kenza Makhloufi : kk_makhloufi@esi.dz
 
 ## License
+![GitHub](https://img.shields.io/github/license/TheDhm/container-manager-app?style=flat-square)  
+The source code for this project is licensed under the MIT license, which you can find in the [LICENSE](./LICENSE) file.
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[Django]: https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white
+[django-url]: https://www.djangoproject.com/
+[Kubernetes]: https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white
+[kubernetes-url]: https://kubernetes.io/
+[Docker]: https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white
+[docker-url]: https://www.docker.com/
+[PostG]: https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white
+[postG-url]: https://www.postgresql.org/
