@@ -259,7 +259,7 @@ Special thanks to M. BELHADI Zohir for helping us through this project.
 Contact KubeLeads Team:
 > - Anfal Bourouina : ka_bourouina@esi.dz
 > - Abderrahmane Melek : ha_melek@esi.dz 
-> - Mohamed Branki : im_regani@esi.dz  
+> - Mohamed Branki Regani : im_regani@esi.dz  
 > - Mohamed Elghazali Kimeche : km_kimeche@esi.dz
 > - Younes Otmani : ky_otmani@esi.dz
 > - Kenza Makhloufi : kk_makhloufi@esi.dz
