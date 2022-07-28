@@ -19,8 +19,9 @@ The proposed solution consists of containerizing two chosen applications (based 
 * PostgreSQL
 
 
-## Project motivation
+<!--## Project motivation
 This project is a semester long project for 2CS Computer Systems speciality (SIQ).
+-->
 
 ## Chosen applications 
 - Gns3
