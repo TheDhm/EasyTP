@@ -252,7 +252,8 @@ kubectl -n django-space exec -it  <django pod> -- python manage.py migrate
 ```sh
 kubectl -n django-space exec -it  <django pod> -- python manage.py createsuperuser
 ```
-
+9. Add Users, Apps and AccessGroups using Django Admin. 
+10. Congrats, You can now start your journey!
 ## Acknowledgment
 Special thanks to M. BELHADI Zohir for helping us through this project.
 
