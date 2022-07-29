@@ -1,4 +1,4 @@
-# KubeLeads
+# EasyTP
 <!--
 >EasyTP is a web based solution that aims to facilitate and >customize cluster management by automating 
 >deployement for different Tools/software used in students labs allowing user >management ~~~ (microservices, fully distributed in LAN, NFS , >worker nodes ...)
