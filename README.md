@@ -117,7 +117,7 @@ _Gns3 application preview_
 ![](./screenshots/teacher_dashboard.png)
 _Teacher dashboard_
 
-![](./screenshots/file_manager.png)
+![](./screenshots/file_manager_.png)
 _Teacher file manager page_
 
 ![](./screenshots/browse_students.png)
