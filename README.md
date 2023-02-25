@@ -196,7 +196,7 @@ kubectl taint node --all node-role.kubernetes.io/control-plane:NoSchedule-
 ```
 2. Clone the repo
 ```sh
-git clone https://github.com/TheDhm/container-manager-app.git
+git clone https://github.com/TheDhm/EasyTP.git
 ```
 3. Create NFS storage (you can follow this [tutorial](https://www.tecmint.com/install-nfs-server-on-ubuntu/))
     * create DB folder in your nfs server (for postgres DB)
